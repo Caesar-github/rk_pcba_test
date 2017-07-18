@@ -105,7 +105,7 @@ typedef enum _HDMI_EVENT_ID {
 #else
 //#define PCBA_TEST_PATH "/tmp"    //IPC使用这个
 //#define PCBA_TEST_PATH "/data/cfg/rk_pcba_test"  //echo使用这个路径
-#define PCBA_TEST_PATH "/data/bin/rk_pcba_test"  //echo使用这个路径
+#define PCBA_TEST_PATH "/data/"  //echo使用这个路径
 
 #endif
 #define MANUAL_TEST_TIMEOUT 60000000   //人工测试项60s超时
