@@ -34,12 +34,12 @@
 #define WLAN_PROC_ERR -45
 
 #define WLAN_START_UP_COMMAND "ifconfig wlan0 up"
-#define WLAN_MANAGE_START "wpa_supplicant -i wlan0 -c /data/cfg/wpa_supplicant.conf &"
+#define WLAN_MANAGE_START "wpa_supplicant -i wlan0 -c /etc/wpa_supplicant.conf &"
 #define WLAN_SCAN_COMMAND "wpa_cli scan 'wlan0'"
 #define WLAN_SCAN_RESULT  "wpa_cli scan_r | busybox awk 'NR>=3{print $5,$3}'"
 #define SCAN_RESULT_FILE "/tmp/wlan_scan_result.txt"
 
-#define AP_SUPPORT_CMD "%s/iw list | busybox grep AP > %s"
+#define AP_SUPPORT_CMD "iw list | busybox grep AP > %s"
 #define AP_SUPPORT_FILE "/tmp/wlan_ap_result.txt"
 #define SOFTAP_MSG "dmesg |tail -n 6|grep SSID > %s"
 #define MSG_FILE "/tmp/softap_start_msg.txt"
@@ -146,7 +146,7 @@ int wlan_test_ap(void)
     printf("=================== function :%s start======================\n\n",__func__);
 
     //* 1、查看是否支持AP模式
-    sprintf(cmd,AP_SUPPORT_CMD,PCBA_TEST_PATH,AP_SUPPORT_FILE);
+    sprintf(cmd,AP_SUPPORT_CMD,AP_SUPPORT_FILE);
     printf("cmd is: %s.\n",cmd);
     system(cmd);
     fp = fopen(AP_SUPPORT_FILE, "r");
