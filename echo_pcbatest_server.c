@@ -257,11 +257,6 @@ static int exit_pcba_test_mode(PCBA_SINGLE_PARA *recv_paras, char *test_flag)
 		return EXIT_TEST_ERR;
 	*test_flag = 0;
 
-    /*Restart wakeWordAgent when finished pcba test*/
-    //new added
-    //system("/data/wakeWordAgent -e gpio &");
-    system("restart_wakeWord.sh");
-
 	return 0;
 }
 
@@ -742,6 +737,7 @@ static void tcp_client_process(int stock_fd)
 	}
 
 ERR_FREE_EXIT:
+    system("restart_wakeWord.sh");
 	//free(cmd_paras);
 ERR_EXIT:
 	close(stock_fd);

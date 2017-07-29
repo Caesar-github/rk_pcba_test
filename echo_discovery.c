@@ -1,3 +1,5 @@
+
+
 /**
  * Copyright (C) 2017 Fuzhou Rockchip Electronics Co., Ltd
  * author: WuQiang <xianlee.wu@rock-chips.com>
@@ -155,14 +157,14 @@ static void broadcast_service()
 
     // get rndis ethernet interface ip address
     while (ioctl(broadcast_fd, SIOCGIFADDR, &ifr) < 0) {
-        sleep(5);
+        sleep(1);
     }
     snprintf(local_addr, FWK_MSG_IP_MAX_LEN, "%s",
             inet_ntoa(((struct sockaddr_in*)&(ifr.ifr_addr))->sin_addr));
 
     // get rndis ethernet interface mac address
     while (ioctl(broadcast_fd, SIOCGIFHWADDR, &ifr) < 0) {
-        sleep(5);
+        sleep(1);
     }
     snprintf(local_mac, FWK_MSG_MAC_MAX_LEN, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
             (unsigned char)ifr.ifr_hwaddr.sa_data[0],
@@ -201,6 +203,8 @@ static void broadcast_service()
         memset(uid, 0, sizeof(uid));
         memset(cmd_info, 0, sizeof(cmd_info));
 
+
+        fprintf(stderr,"=========function is: %s line is : %d=============\n",__func__,__LINE__);
         if (recvfrom(broadcast_fd, buf, 64, 0,
             (struct sockaddr *)&server_addr, &addr_len) < 0) {
             perror("broadcast recvfrom");
