@@ -33,6 +33,8 @@
 #include <dirent.h>
 #include <linux/watchdog.h>
 
+#include <sys/ioctl.h>
+#include <net/if.h>
 #include <unistd.h>
 
 #define LOG_TAG "pcbatest_server"
@@ -219,24 +221,47 @@ static int pcba_start_process(char *process, char *str)
 	return 0;
 }
 
-static int enter_pcba_test_mode(PCBA_SINGLE_PARA *recv_paras, char *test_flag)
+static int enter_pcba_test_mode(char *msg, char *test_flag)
 {
-	int ret = 0;
+	struct ifreq ifr;
+    char local_mac[18] = {0};
+	int len = 0;
+	char *start = NULL;
+	int sockfd = -1;
 
 	log_info("enter pcba test mode ...\n");
 
 	/*Kill wakeWordAgent process before pcba test*/
 	//new added
 	//system(" kill `ps | grep wakeWordAgent| grep -v grep | awk '{print $1}'`");
-	system("close_wakeWord.sh");
 	*test_flag = 1;
 
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd < 0)
+        log_err("socket creat failed!(UDP)\n");
+    else {
+		strcpy(ifr.ifr_name, "wlan0");
+		while (ioctl(sockfd, SIOCGIFHWADDR, &ifr) < 0) {
+			usleep(200000); /* 200 ms */
+		}
+		snprintf(local_mac, 18, "%.2X:%.2X:%.2X:%.2X:%.2X:%.2X",
+				 (unsigned char)ifr.ifr_hwaddr.sa_data[0],
+				 (unsigned char)ifr.ifr_hwaddr.sa_data[1],
+				 (unsigned char)ifr.ifr_hwaddr.sa_data[2],
+				 (unsigned char)ifr.ifr_hwaddr.sa_data[3],
+				 (unsigned char)ifr.ifr_hwaddr.sa_data[4],
+				 (unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+	}
+	start = msg;
+	len = strlen("echo;");
+	memcpy(start, "echo;", len);
+	start += len;
+	memcpy(start, local_mac, 18);
 	return 0;
 }
 
 static int exit_pcba_test_mode(PCBA_SINGLE_PARA *recv_paras, char *test_flag)
 {
-	int ret = 0;
 	DIR *dir = NULL;
 	struct dirent *dir_ptr = NULL;
 	char pcbatest_result_filename[COMMAND_VALUESIZE] = {0};
@@ -253,8 +278,6 @@ static int exit_pcba_test_mode(PCBA_SINGLE_PARA *recv_paras, char *test_flag)
 		}
 	}
 	closedir(dir);
-	if (ret)
-		return EXIT_TEST_ERR;
 	*test_flag = 0;
 
 	return 0;
@@ -643,7 +666,7 @@ static int tcp_command_process(int stock_fd, int err_code, PCBA_COMMAND_PARA *cm
 		goto SEND_CMD;
 
 	if (!strcmp(recv_paras[INDEX_CMD].valuestr, recv_cmd_type[ENTER_CMD].name)) {
-		err_code = enter_pcba_test_mode(recv_paras, &test_flag);
+		err_code = enter_pcba_test_mode(msg, &test_flag);
 	} else if (!strcmp(recv_paras[INDEX_CMD].valuestr, recv_cmd_type[EXIT_CMD].name)) {
 	    usleep(2000);  //休眠2ms让PC端有时间读取结果
 		err_code = exit_pcba_test_mode(recv_paras, &test_flag);
@@ -717,7 +740,7 @@ static void tcp_client_process(int stock_fd)
 		log_info("recv_buf is :%s \n",recv_buf);
 		if (recv_num <= 0) {
 			log_err("recv error:%s\n", strerror(errno));
-			goto ERR_FREE_EXIT;
+			goto ERR_EXIT;
 		}
 		recv_buf[recv_num]='\0';
 
@@ -729,15 +752,13 @@ static void tcp_client_process(int stock_fd)
 
 		proc_ret = tcp_command_process(stock_fd, parse_ret, cmd_paras);
 		if (proc_ret == FORK_FAIL){
-            goto ERR_FREE_EXIT;
+            goto ERR_EXIT;
         }
 
 		else if (proc_ret == CHILD_EXIT)
 			goto EXIT;
 	}
 
-ERR_FREE_EXIT:
-    system("restart_wakeWord.sh");
 	//free(cmd_paras);
 ERR_EXIT:
 	close(stock_fd);
