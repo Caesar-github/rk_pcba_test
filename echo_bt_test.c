@@ -38,8 +38,8 @@
 #include "common.h"
 
 //*定义循环读取蓝牙地址时间间隔以及超时时间
-#define PERIOD_TIME 3
-#define BT_TIMEOUT_FIRMWARE 30
+#define PERIOD_TIME 1
+#define BT_TIMEOUT_FIRMWARE 7
 
 #define BT_PROC_ERR -30
 #define BT_FIRMWARE_LOAD_ERR -31
