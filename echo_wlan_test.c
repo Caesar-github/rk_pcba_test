@@ -41,7 +41,7 @@
 
 #define AP_SUPPORT_CMD "iw list | busybox grep AP > %s"
 #define AP_SUPPORT_FILE "/tmp/wlan_ap_result.txt"
-#define SOFTAP_MSG "dmesg |tail -n 6|grep SSID > %s"
+#define SOFTAP_MSG "dmesg | grep SSID | tail -n 6 > %s"
 #define MSG_FILE "/tmp/softap_start_msg.txt"
 
 
@@ -237,12 +237,12 @@ void *wlan_test(void *argv)
     }
     printf("===================Wlan test success ======================\n");
     system("ifconfig wlan0 down");
-    system("busybox kill all wpa_supplicant");      //关闭无线管理程序wpa_supplicant
+    system("busybox killall wpa_supplicant");      //关闭无线管理程序wpa_supplicant
     return (void*)test_flag;
     fail:
         printf("===================Wlan test failed======================\n");
         system("ifconfig wlan0 down");
-        system("busybox kill all wpa_supplicant");      //关闭无线管理程序wpa_supplicant
+        system("busybox killall wpa_supplicant");      //关闭无线管理程序wpa_supplicant
         return (void*)test_flag;
 }
 
