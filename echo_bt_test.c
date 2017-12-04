@@ -394,7 +394,7 @@ int bt_test_bluez(void)
     system(cmd);
     status = system("brcm_patchram_plus1 --enable_hci --no2bytes \
            --use_baudrate_for_download  --tosleep  200000 \
-           --baudrate 1500000 --patchram /data/bcm43438a0.hcd /dev/ttyS0 &");
+           --baudrate 1500000 --patchram /data/bcm4339a0.hcd /dev/ttyS1 &");
 
     test_flag = confirm_firmware_test();
     if(test_flag < 0)
