@@ -135,68 +135,6 @@ int wlan_exec(const char *cmd, char *path)
 	return 0;
 }
 
-/* 验证AP模式是否正常 */
-int wlan_test_ap(void)
-{
-    int test_flag=-1;
-    char cmd[128];
-    char buf[128];
-    char *ap_name = "wlan_ap_test";
-    FILE *fp;
-    printf("=================== function :%s start======================\n\n",__func__);
-
-    //* 1、查看是否支持AP模式
-    sprintf(cmd,AP_SUPPORT_CMD,AP_SUPPORT_FILE);
-    printf("cmd is: %s.\n",cmd);
-    system(cmd);
-    fp = fopen(AP_SUPPORT_FILE, "r");
-     //如果文件打开失败，则输出错误信息
-    if (!fp)
-    {
-        printf("%s fopen err:%s\n",__func__,strerror(errno));
-        return -1;
-    }
-    fgets(buf,sizeof(buf),fp);
-    fclose(fp);
-    remove(AP_SUPPORT_FILE);
-    //* 判断"AP"是不是包含在buf里面
-    if(!strstr(buf,"AP"))
-    {
-        printf("This chip not support softAP, buffer content is: %s\n",buf);
-        return -1;
-    }
-    //* 2、启动softapDemo，查看是否能启动正常
-    sprintf(cmd,"softapDemo %s",ap_name);
-    system(cmd);
-    //* 获取内核打印信息，确定softAP开启
-    sprintf(cmd,SOFTAP_MSG,MSG_FILE);
-    system(cmd);
-    fp = fopen(MSG_FILE, "r");
-     //如果文件打开失败，则输出错误信息
-    if (!fp)
-    {
-        printf("%s fopen err:%s\n",__func__,strerror(errno));
-        return -1;
-    }
-    //检测是否包含 "Broadcast SSID: ON"信息，如果有说明启动正常，否则softAP启动失败
-    while(!feof(fp))
-    {
-        fgets(buf,sizeof(buf),fp);
-         if(strstr(buf,"Broadcast SSID: ON")!=NULL)
-         {
-             test_flag = 0;
-             break;
-         }
-    }
-    fclose(fp);
-    remove(MSG_FILE);
-    system("softapDemo stop");
-    printf("\t\n test_flag = %d\n",test_flag);
-    printf("\n=================== function :%s finish======================\n",__func__);
-    return test_flag;
-}
-
-
 void *wlan_test(void *argv)
 {
     int test_flag=-1;
@@ -228,13 +166,7 @@ void *wlan_test(void *argv)
         goto fail;
         //return -1;
     }
-    //6、测试AP模式是否正常
-    test_flag = wlan_test_ap();
-     if(test_flag < 0)
-    {
-        goto fail;
-        //return -1;
-    }
+
     printf("===================Wlan test success ======================\n");
     system("ifconfig wlan0 down");
     system("busybox killall wpa_supplicant");      //关闭无线管理程序wpa_supplicant
