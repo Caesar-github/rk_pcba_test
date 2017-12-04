@@ -18,6 +18,7 @@ set(SRC_LIST
 	echo_rotary_test.c
 	echo_rtc_test.c
 	echo_wlan_test.c
+	echo_auto_test.c
 )
 
 foreach(obj_source ${SRC_LIST})

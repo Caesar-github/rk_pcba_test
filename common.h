@@ -40,6 +40,7 @@ typedef enum {
 	STOP_TEST_ERR = -14,
 	SAVE_RESULE_ERR = -15,
 	TEST_FORK_ERR = -16,
+	TEST_RESULT_EXIST = -17,
 
 	/* write storage */
 	WRITE_VENDOR_ERR = -20,

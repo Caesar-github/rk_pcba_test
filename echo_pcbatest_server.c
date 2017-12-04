@@ -350,7 +350,7 @@ static int start_pcba_test_preproccess(PCBA_SINGLE_PARA *recv_paras, int test_fl
 		"%s/%s_result\0", TEST_RESULT_SAVE_PATH,
 		recv_paras[INDEX_TEST_ITEM].valuestr);
 	if (access(pcbatest_result_filename, F_OK) == 0)
-		remove(pcbatest_result_filename);
+		return TEST_RESULT_EXIST;
 
 	if (process_is_exists(recv_paras[INDEX_TEST_ITEM].valuestr)) {
 		log_err("start test fail, test item %s already exists\n",
@@ -441,20 +441,14 @@ static int tcp_command_check(PCBA_COMMAND_FORMAT index, char *str)
 		break;
 
 	case INDEX_TEST_ITEM:
-		/*snprintf(pcba_test_filename, sizeof(pcba_test_filename),
-			"%s/%s\0", PCBA_TEST_PATH, str);*/
+		snprintf(pcba_test_filename, sizeof(pcba_test_filename),
+			"%s%s", PCBA_TEST_PATH, str);
 
-        snprintf(pcba_test_filename, sizeof(pcba_test_filename),"%s\0",str);
 
-		/*if (access(pcba_test_filename, F_OK)) {
-			log_err("not found test item(%s), re-download file\n", pcba_test_filename);
+		if (access(pcba_test_filename, F_OK)) {
+			log_err("not found test item(%s), test not support!\n", pcba_test_filename);
 			return TEST_ITEM_ERR;
-		} else if (stat(pcba_test_filename, &file_stat) == 0) {
-			if (file_stat.st_mode & S_IFDIR) {
-				log_err("test_item error %s is directory\n", pcba_test_filename);
-				return TEST_ITEM_ERR;
 			}
-		}*/
 		break;
 
 	case INDEX_CMD:
@@ -655,13 +649,14 @@ static int tcp_command_process(int stock_fd, int err_code, PCBA_COMMAND_PARA *cm
 {
 	int ret = -1;
 	int fork_status = PARENT_EXIT;
+	int item_busy_or_result_exist = 0;
 	static char test_flag = 0;
 	char status[COMMAND_VALUESIZE] = NAK_STA;
 	char msg[COMMAND_VALUESIZE] = {0};
 	char result[COMMAND_VALUESIZE] = RESULT_TESTING;
 	PCBA_SINGLE_PARA *recv_paras = cmd_paras->recv_paras;
 
-    log_info("recv_paras[INDEX_TEST_ITEM].valuestr is :%s---------\n",recv_paras[INDEX_TEST_ITEM].valuestr);
+	log_info("recv_paras[INDEX_TEST_ITEM].valuestr is :%s---------\n",recv_paras[INDEX_TEST_ITEM].valuestr);
 	if (err_code)
 		goto SEND_CMD;
 
@@ -681,6 +676,13 @@ static int tcp_command_process(int stock_fd, int err_code, PCBA_COMMAND_PARA *cm
 				if (ret)
 					err_code = ret;
 			}
+		} else if (err_code == TEST_ITEM_BUSY) {
+			item_busy_or_result_exist = 1;
+			err_code = 0;
+			strcpy(result, RESULT_TESTING);
+		} else if (err_code == TEST_RESULT_EXIST) {
+			item_busy_or_result_exist = 1;
+			err_code = 0;
 		}
 	} else if (!strcmp(recv_paras[INDEX_CMD].valuestr, recv_cmd_type[STOP_CMD].name)) {
 		err_code = stop_pcba_test(recv_paras);
@@ -692,7 +694,7 @@ static int tcp_command_process(int stock_fd, int err_code, PCBA_COMMAND_PARA *cm
 	}
 
 SEND_CMD:
-    if (err_code & ret)
+	if (err_code & ret)
 		strcpy(status, NAK_STA);
 	else
 		strcpy(status, ACK_STA);
@@ -707,12 +709,10 @@ SEND_CMD:
 		goto EXIT;
 	}
 
-    if (!strcmp(recv_paras[INDEX_CMD].valuestr, recv_cmd_type[START_CMD].name)){
-        if(!strcmp(recv_paras[INDEX_TEST_ITEM].valuestr, STORAGE_TESTITEM)){
-            goto EXIT;
-        }
-        fork_status = start_pcba_test_proccess(recv_paras, &err_code);
-    }
+	if (!item_busy_or_result_exist &&
+	    !strcmp(recv_paras[INDEX_CMD].valuestr, recv_cmd_type[START_CMD].name) &&
+	    strcmp(recv_paras[INDEX_TEST_ITEM].valuestr, STORAGE_TESTITEM))
+        	fork_status = start_pcba_test_proccess(recv_paras, &err_code);
 
 EXIT:
 
