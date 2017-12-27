@@ -18,9 +18,37 @@
 #include "common.h"
 
 #define AUDIO_CHANNAL_CNT 8
-#define FLAGS O_WRONLY | O_CREAT | O_TRUNC  
-#define MODE S_IRWXU | S_IXGRP | S_IROTH | S_IXOTH 
 #define RINGMIC_BAD_ERROR 93 /* has bad mic */
+
+#define DEBUG_ON 0
+#if DEBUG_ON
+	#define FLAGS O_WRONLY | O_CREAT | O_TRUNC
+	#define MODE S_IRWXU | S_IXGRP | S_IROTH | S_IXOTH
+	void save_audio_file(char *path, char *buff, int len)
+	{
+		int fd = 0;
+		int ret = 0;
+		char shell_cmd[200] = {0};
+		sprintf(shell_cmd, "rm -rf %s", path);
+		system(shell_cmd);
+		if ((fd = open(path, FLAGS, MODE)) == -1) {
+			log_err("%s Create %s failed, %s\n", __func__,
+				path, strerror(errno));
+			return;
+		}
+		ret = write(fd, buff, len);
+		if (ret != len) {
+			log_err("%s Write %s failed, %s\n", __func__,
+				path, strerror(errno));
+			return;
+		}
+		log_info("%s file Saved successfully!\n", path);
+		close(fd);
+		return;
+	}
+#else
+	void save_audio_file(char *paht, char *buff, int len);
+#endif
 
 int *bytesToInt(char *src, int *length)
 {
@@ -44,6 +72,29 @@ int *bytesToInt(char *src, int *length)
 
 	*length = int_len;
 	return ret;
+}
+int linear_amplification(void *data, void *out, int bytes)
+{
+    int i = 0, j = 0;
+	int mChannels = AUDIO_CHANNAL_CNT;
+	for (i = 0; i < bytes / 4 ; ) {
+		for (j = 0; j < mChannels; j++) {
+			int tmp = 0;
+			int tmp_data = (*((int *)data + i + j));
+#if 1
+			tmp_data = tmp_data << 2;
+			if(tmp_data > 32767) {
+				tmp_data = 32767;
+			} else if(tmp_data < -32768) {
+				tmp_data = -32768;
+			}
+#endif
+			tmp = ((((tmp_data & 0xfffff000) >> 12) << 12) | ((j+1) << 8)) & 0xffffff00;
+			*((int *)out + i + j) = tmp;
+		}
+		i += mChannels;
+	}
+    return 0;
 }
 
 int preProcessBuffer(void *data, void *out, int bytes)
@@ -78,43 +129,63 @@ static int add_channel(char *src, char **dst, int len)
 
 	return dst_len;
 }
-
-int record_test(char *result)
+/*
+ * This function includes a ring mic recording test
+ * and vibration test, select the test type by flag.
+ *    flag = 0:ring mic record test.
+ *    flag = 1:ring mic vibration test.
+ */
+int ringmic_test(char *result, int flag)
 {
-	char cmd[128];
-	char* error = NULL;
 	int *record_ret = NULL;
 	int fd = 0;
 	int rf_len = 0; /* record file length */
 	int pre_len = 0;
 	char *rf_buff = NULL; /* record file buffer */
 	char *pre_buff = NULL;
+	char *gain_buff = NULL;
 	int *buffer = NULL;
-	int ret = 0;
-	int i = 0;
+	char path[128] = {0};
+	int ret = 0, i = 0;
 
-	log_info("Start record test.\n");
 	/*
-	 * Play the specified file, and recording.
-	 * recording at least 10 seconds.
+	 * According to flag choose to perform "recording test"
+	 * or "vibration test".
 	 */
-	system("aplay /data/rectest_400hz.wav &");
-	usleep(200000);
-	system("arecord -t raw -D hw:1,0 -f S16_LE -c 8 -r 16000 -d 10 /data/ringmic_record.pcm &");
-
+	if (flag) {
+		log_info("Start vibration test.\n");
+		sprintf(path, "%s", "/tmp/ringmic_vibration.pcm");
+		/* Play the specified file, and recording. */
+		system("arecord -t raw -f S16_LE -c 8 -r 16000 -d 1 /tmp/ringmic_vibration.pcm");
+		system("rm /tmp/ringmic_vibration.pcm");
+		system("killall -9 arecord");
+		system("aplay /data/vibration.wav &");
+		usleep(200000);
+		system("arecord -t raw -f S16_LE -c 8 -r 16000 /tmp/ringmic_vibration.pcm &");
+	} else {
+		log_info("Start record test.\n");
+		sprintf(path, "%s", "/tmp/ringmic_record.pcm");
+		/* Play the specified file, and recording. */
+		system("arecord -t raw -f S16_LE -c 8 -r 16000 -d 1 /tmp/ringmic_record.pcm");
+		system("rm /tmp/ringmic_record.pcm");
+		system("killall -9 arecord");
+		system("aplay /data/rectest_400hz.wav &");
+		usleep(200000);
+		system("arecord -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_record.pcm &");
+	}
+	/* recording at least 10 seconds.*/
 	log_info("Recording...\n");
-	sleep(13);
-
-	system("killall arecord");
+	sleep(15);
+	system("killall -9 arecord");
 	system("killall aplay");
 
 	log_info("Parsing audio file...\n");
-	fd = open("/data/ringmic_record.pcm", O_RDONLY);
+	fd = open(path, O_RDONLY);
 	if (fd <= 0) {
-		log_err("open /data/ringmic_record.pcm failed(%s)!\n",
-			strerror(errno));
+		log_err("open %s failed(%s).\n", path, strerror(errno));
 		return errno;
 	}
+	/* get length of the record file. */
 	rf_len = lseek(fd, 0, SEEK_END);
 	rf_buff = (char *)malloc(rf_len);
 	if (!rf_buff) {
@@ -122,16 +193,28 @@ int record_test(char *result)
 		return -ENOMEM;
 	}
 	memset(rf_buff, 0, rf_len);
+	/* Read from the beginning of the file. */
 	lseek(fd, 0, SEEK_SET);
 	ret = read(fd, rf_buff, rf_len);
 	if (ret != rf_len) {
-		log_err("read /data/ringmic_record.pcm failed!(%s)\n",
-			strerror(errno));
+		log_err("read %s failed(%s).\n", path, strerror(errno));
 		close(fd);
 		free(rf_buff);
 		return errno;
 	}
 	close(fd);
+
+	/* Increase gain */
+	gain_buff = (char *)malloc(rf_len);
+	if (!gain_buff) {
+		close(fd);
+		free(rf_buff);
+		return -ENOMEM;
+	}
+	memset(gain_buff, 0, rf_len);
+	linear_amplification(rf_buff, gain_buff, rf_len);
+	memcpy(rf_buff, gain_buff, rf_len);
+	free(gain_buff);
 
 	/* Add channel numbers to the original recording file */
 	pre_len = add_channel(rf_buff, &pre_buff, rf_len);
@@ -148,105 +231,38 @@ int record_test(char *result)
 		return -ENOMEM;
 	}
 	free(pre_buff);
-	record_ret = recordTestWr((int *)buffer, pre_len - 1280);
-	printf("\n");
-	for (i = 0; i < AUDIO_CHANNAL_CNT; i++) {
-		if (*(record_ret + i)) {
-			log_info("recordTest:#%d mic is bad!\n", i);
-			*result++ = 1;
-		} else {
-			log_info("recordTest:#%d mic is ok!\n", i);
-			*result++ = 0;
+
+	/* Call library interface */
+	if (!flag) {
+		record_ret = recordTestWr((int *)buffer, pre_len - 1280);
+		printf("\n");
+		for (i = 0; i < AUDIO_CHANNAL_CNT; i++) {
+			if (*(record_ret + i)) {
+				log_info("recordTest:#%d mic is bad!\n", i);
+				*result++ = 1;
+			} else {
+				log_info("recordTest:#%d mic is ok!\n", i);
+				*result++ = 0;
+			}
 		}
-	}
 
-	system("rm -rf /data/ringmic_record.pcm");
-	free(buffer);
-	return 0;
-}
-
-int vibration_test(char *result)
-{
-	char cmd[128];
-	char* error = NULL;
-	int *record_ret = NULL;
-	int fd = 0;
-	int rf_len = 0; /* record file length */
-	int pre_len = 0;
-	char *rf_buff = NULL; /* record file buffer */
-	char *pre_buff = NULL;
-	int *buffer = NULL;
-	int ret = 0;
-	int i = 0;
-
-	log_info("Start record test.\n");
-	/*
-	 * Play the specified file, and recording.
-	 * recording at least 10 seconds.
-	 */
-	system("aplay /data/vibration.wav &");
-	usleep(200000);
-	system("arecord -t raw -D hw:1,0 -f S16_LE -c 8 -r 16000 /data/ringmic_vibration.pcm &");
-
-	log_info("Recording...\n");
-	sleep(13);
-
-	system("killall arecord");
-	system("killall aplay");
-
-	log_info("Parsing audio file...\n");
-	fd = open("/data/ringmic_vibration.pcm", O_RDONLY);
-	if (fd <= 0) {
-		log_err("open /data/ringmic_vibration.pcm failed(%s)!\n",
-			strerror(errno));
-		return errno;
-	}
-	rf_len = lseek(fd, 0, SEEK_END);
-	rf_buff = (char *)malloc(rf_len);
-	if (!rf_buff) {
-		close(fd);
-		return -ENOMEM;
-	}
-	memset(rf_buff, 0, rf_len);
-	lseek(fd, 0, SEEK_SET);
-	ret = read(fd, rf_buff, rf_len);
-	if (ret != rf_len) {
-		log_err("read /data/ringmic_vibration.pcm failed!(%s)\n",
-			strerror(errno));
-		close(fd);
-		free(rf_buff);
-		return errno;
-	}
-	close(fd);
-
-	/* Add channel numbers to the original recording file */
-	pre_len = add_channel(rf_buff, &pre_buff, rf_len);
-	if (pre_len < 0) {
-		free(rf_buff);
-		return pre_len;
-	}
-	free(rf_buff);
-
-	buffer = bytesToInt(pre_buff, &pre_len);
-	if (!buffer) {
-		log_err("bytesToInt() failed!\n");
-		free(pre_buff);
-		return -ENOMEM;
-	}
-	free(pre_buff);
-	record_ret = vibrateTestWr((int *)buffer, pre_len - 1280);
-	printf("\n");
-	for (i = 0; i < AUDIO_CHANNAL_CNT; i++) {
-		if (*(record_ret + i)) {
-			log_info("vibrationTest:#%d mic is bad!\n", i);
-			*result++ = 1;
-		} else {
-			log_info("vibrationTest:#%d mic is ok!\n", i);
-			*result++ = 0;
+		system("rm -rf /tmp/ringmic_record.pcm");
+	} else {
+		record_ret = vibrateTestWr((int *)buffer, pre_len - 1280);
+		printf("\n");
+		for (i = 0; i < AUDIO_CHANNAL_CNT; i++) {
+			if (*(record_ret + i)) {
+				log_info("vibrationTest:#%d mic is bad!\n", i);
+				*result++ = 1;
+			} else {
+				log_info("vibrationTest:#%d mic is ok!\n", i);
+				*result++ = 0;
+			}
 		}
+
+		system("rm -rf /data/ringmic_vibration.pcm");
 	}
 
-	system("rm -rf /data/ringmic_vibration.pcm");
 	free(buffer);
 	return 0;
 }
@@ -266,7 +282,7 @@ int main()
 	start = buf;
 	memcpy(start, "vibration:", strlen("vibration:"));
 	start = start + strlen("vibration:");
-	ret = vibration_test(vibration_ret);
+	ret = ringmic_test(vibration_ret, 1);
 	if (ret) {
 		memcpy(start, "error", strlen("error"));
 		start += strlen("error");
@@ -284,7 +300,7 @@ int main()
 
 	memcpy(start, "record:", strlen("record:"));
 	start = start + strlen("record:");
-	ret = record_test(record_ret);
+	ret = ringmic_test(record_ret, 0);
 	if (ret) {
 		memcpy(start, "error", strlen("error"));
 		start += strlen("error");
