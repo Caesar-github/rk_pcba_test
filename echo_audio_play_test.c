@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	char buf[COMMAND_VALUESIZE] = "audio_play_test";
     char result[COMMAND_VALUESIZE] = RESULT_VERIFY;
 
-    system("amixer set Playback 10%");
+    system("amixer set Master Playback 30%");
 	log_info("audio play test start...\n");
 	gettimeofday(&t1, NULL);
     while(1)

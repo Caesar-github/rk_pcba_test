@@ -18,7 +18,8 @@ set(SRC_LIST
 	echo_rotary_test.c
 	echo_rtc_test.c
 	echo_wlan_test.c
-	echo_touchpad_test.c
+	echo_sdcard_test.c
+	echo_usbhost_test.c
 	echo_auto_test.c
 )
 
@@ -37,8 +38,12 @@ set(SRC_LIST echo_ringmic_test.c)
 link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/rk_pcba_test/libmictest.so)
 add_executable( echo_ringmic_test ${SRC_LIST} )
 
+set(SRC_LIST echo_ringmic_pdm_test.c)
+link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/rk_pcba_test/libmictest.so)
+add_executable( echo_ringmic_pdm_test ${SRC_LIST} )
+
 MESSAGE(${CMAKE_CURRENT_SOURCE_DIR} "==CMAKE_CURRENT_SOURCE_DIR=")
 MESSAGE(${CMAKE_STRIP}  "== CMAKE_STRIP")
 MESSAGE(${CMAKE_C_COMPILER} "==CMAKE_C_COMPILER")
 
-install(TARGETS echo_pcbatest_server echo_ringmic_test DESTINATION ${INSTALL_TARGET_DIR})
+install(TARGETS echo_pcbatest_server echo_ringmic_test echo_ringmic_pdm_test DESTINATION ${INSTALL_TARGET_DIR})
