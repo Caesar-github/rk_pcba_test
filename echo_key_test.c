@@ -353,8 +353,8 @@ int main(int argc, char **argv)
     //snprintf(buf, sizeof(buf), "key_code:%d", key_event.code);
     dumpKeyPressInfo(gkey_test);
 EXIT:
-    //sleep(1);
-    //memset(buf, 0 , sizeof(buf));
+    sleep(1);
+    memset(buf, 0 , sizeof(buf));
 
     if (!err_code)
         strcpy(result, RESULT_VERIFY);
