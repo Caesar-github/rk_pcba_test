@@ -34,16 +34,20 @@ include_directories(cJSON)
 link_libraries(m)
 add_executable( echo_pcbatest_server ${SRC_LIST} )
 
+set(SRC_LIST mic_test_Linux/record_test.c mic_test_Linux/vibrate_test.c)
+add_library(mictest ${SRC_LIST})
+set_property(TARGET mictest PROPERTY POSITION_INDEPENDENT_CODE ON)
+
 set(SRC_LIST echo_ringmic_test.c)
-link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/rk_pcba_test/libmictest.so)
 add_executable( echo_ringmic_test ${SRC_LIST} )
+target_link_libraries(echo_ringmic_test mictest)
 
 set(SRC_LIST echo_ringmic_pdm_test.c)
-link_libraries(${CMAKE_CURRENT_SOURCE_DIR}/rk_pcba_test/libmictest.so)
 add_executable( echo_ringmic_pdm_test ${SRC_LIST} )
+target_link_libraries(echo_ringmic_pdm_test mictest)
 
 MESSAGE(${CMAKE_CURRENT_SOURCE_DIR} "==CMAKE_CURRENT_SOURCE_DIR=")
 MESSAGE(${CMAKE_STRIP}  "== CMAKE_STRIP")
 MESSAGE(${CMAKE_C_COMPILER} "==CMAKE_C_COMPILER")
 
-install(TARGETS echo_pcbatest_server echo_ringmic_test echo_ringmic_pdm_test DESTINATION ${INSTALL_TARGET_DIR})
+install(TARGETS echo_pcbatest_server echo_ringmic_test echo_ringmic_pdm_test mictest DESTINATION ${INSTALL_TARGET_DIR})

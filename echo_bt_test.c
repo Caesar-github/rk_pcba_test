@@ -394,7 +394,7 @@ int bt_test_bluez(void)
     system(cmd);
     status = system("brcm_patchram_plus1 --enable_hci --no2bytes \
            --use_baudrate_for_download  --tosleep  200000 \
-           --baudrate 1500000 --patchram /data/bcm4339a0.hcd /dev/ttyS1 &");
+           --baudrate 1500000 --patchram /system/etc/firmware/BCM4345C0.hcd /dev/ttyS4 &");
 
     test_flag = confirm_firmware_test();
     if(test_flag < 0)
@@ -438,11 +438,11 @@ void *bt_test(void *argv)
 	}
     printf("Bluetooth is /sys/class/rfkill/rfkill:%d\n",rfkill_bt_id);
 
+#if 0
     //2、获取Bluetooth芯片名字，chip name
     ret = bt_get_chip_name(bt_chip_name,sizeof(bt_chip_name));
     if(ret < 0){
 		printf("function: %s failed! %s\n",__func__,strerror(errno));
-		goto fail;
 	}
 	printf("Bluetooth chip name is %s\n",bt_chip_name);
 
@@ -450,9 +450,9 @@ void *bt_test(void *argv)
     bt_chip_type = get_chip_type(bt_chip_name);
     if(bt_chip_type < 0){
 		printf("function: %s failed! %s\n",__func__,strerror(errno));
-		goto fail;
 	}
     printf("Bluetooth chip type is: bt_chip_type = %d\n", bt_chip_type);
+#endif
 
     //4、测试Bluetooth主程序
      ret = bt_test_bluez();
@@ -480,7 +480,10 @@ int main(int argc, char *argv[])
     {
         strcpy(result,RESULT_FAIL);
         err_code = BT_PROC_ERR;
+        printf("===err_code = %d===\n",err_code);
     }
+    if (err_code != 0)
+        strcpy(result, RESULT_FAIL);
     send_msg_to_server(buf, result, err_code);
 }
 

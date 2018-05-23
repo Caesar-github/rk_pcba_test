@@ -165,7 +165,7 @@ int ringmic_test(char *result, int flag)
 		system("rm /tmp/ringmic_vibration.pcm");
 		system("aplay /data/vibration.wav &");
 		usleep(200000);
-		system("arecord -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_vibration.pcm");
+		system("arecord -D hw:rockchippdmmica -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_vibration.pcm");
 	} else {
 		log_info("Start record test.\n");
 		sprintf(path, "%s", "/tmp/ringmic_record.pcm");
@@ -174,7 +174,7 @@ int ringmic_test(char *result, int flag)
 		system("rm /tmp/ringmic_record.pcm");
 		system("aplay /data/rectest_400hz.wav &");
 		usleep(200000);
-		system("arecord -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_record.pcm");
+		system("arecord -D hw:rockchippdmmica -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_record.pcm");
 	}
 	system("killall -9 arecord");
 	system("killall aplay");
@@ -204,7 +204,6 @@ int ringmic_test(char *result, int flag)
 	}
 	close(fd);
 
-#if 0
 	/* Increase gain */
 	gain_buff = (char *)malloc(rf_len);
 	if (!gain_buff) {
@@ -216,7 +215,6 @@ int ringmic_test(char *result, int flag)
 	linear_amplification(rf_buff, gain_buff, rf_len);
 	memcpy(rf_buff, gain_buff, rf_len);
 	free(gain_buff);
-#endif
 	FILE *fp;
 	if (flag)
 		fp = fopen("/tmp/gain-vib.pcm", "wb");
@@ -244,6 +242,10 @@ int ringmic_test(char *result, int flag)
                 fclose(fp);
         }
 
+#if 0
+	buffer = (int *)pre_buffer;
+	pre_len = (pre_len / 4);
+#else
 	buffer = bytesToInt(pre_buff, &pre_len);
 	if (!buffer) {
 		log_err("bytesToInt() failed!\n");
@@ -260,6 +262,7 @@ int ringmic_test(char *result, int flag)
                 fwrite((int *)buffer+16000, 4, pre_len - 32000, fp);
                 fclose(fp);
         }
+#endif
 
 	/* Call library interface */
 	if (!flag) {
