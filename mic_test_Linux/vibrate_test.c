@@ -217,7 +217,7 @@ int* vibrateTestWr(int audio_data[], int audio_length)
 		if(ret != 0) 
 		{
 			printf("check vibration fail\n");
-			ccids[i + 1] = 1;
+			ccids[i] = 1;
 		} else {
 			printf("check vibration success\n");
 		}

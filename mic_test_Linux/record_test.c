@@ -457,10 +457,10 @@ int* recordTestWr(int audio_data[], int audio_length)
 		ret = check_index(i, pcmInput[i], pcmIndex[i]);
 		if(ret < 0)
 		{
-			printf("check index fail");
+			printf("check index fail\n");
 			if(ret != 0) 
 			{
-				ccids[i + 1] = 1;
+				ccids[i] = 1;
 			}	
 		}
 	 }
@@ -474,10 +474,10 @@ int* recordTestWr(int audio_data[], int audio_length)
 			
 			if(ret != 0) 
 			{
-				printf("check agreement fail");
-				ccids[i + 1] = 1;
+				printf("check agreement fail\n");
+				ccids[i] = 1;
 			}else {
-				printf("check agreement success");
+				printf("check agreement success\n");
 			}	
 				
 		}
@@ -513,7 +513,7 @@ static int check_index(int signal, int input[], int input_length)
 		i++;
 	}
 
-	printf("check index success, channel_index is %d", channel_index);
+	printf("check index success, channel_index is %d\n", channel_index);
 
 	return 0;
 }
@@ -522,10 +522,10 @@ static int check_index(int signal, int input[], int input_length)
 static int check_agreement(int signal, int input[], int input_length)
 {
 	int i = 0, j = 0, offset = 0;
-	printf("start to check agreement, signal is %d", signal);
+	printf("start to check agreement, signal is %d\n", signal);
 	if(input == NULL || input_length < 40000)
 	{
-		printf("error in input pcm, content : %d , length less than one frame", input_length);
+		printf("error in input pcm, content : %d , length less than one frame\n", input_length);
 		return -21;
 	}
 
@@ -565,15 +565,15 @@ static int check_agreement(int signal, int input[], int input_length)
 		
 		if(xcorr(buf_shift, rec_400hz, 256, 20480) >= THRES_REC_FREQ)
 		{
-			printf("check agreemnt, %d success", pass_count);
+			printf("check agreemnt, %d success\n", pass_count);
 			pass_count++;			
 		}else {
-			printf("check agreemnt, %d failed", pass_count);
+			printf("check agreemnt, %d failed\n", pass_count);
 		}
     }	
 
 	pass_rate = pass_count * 100 / total_count;
-	printf("signal : %d, pass_count is %d, total_count is %d, pass_rate is %d", signal, pass_count, total_count, pass_rate);
+	printf("signal : %d, pass_count is %d, total_count is %d, pass_rate is %d\n", signal, pass_count, total_count, pass_rate);
 	if(pass_rate < THRES_REC_PASS_RATE)
 	{
 		//printf("check agreement fail");
