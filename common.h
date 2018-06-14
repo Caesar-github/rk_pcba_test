@@ -91,6 +91,15 @@ typedef enum {
 	USBHOST_UNKNOWN_ERR = -100,
 	USBHOST_TIMEOUT_ERR = -101,
 	USBHOST_MOUNT_ERR   = -102,
+
+    /*infrard ray test*/
+    IR_OPEN_FAIL        = -110,
+    IR_EVENT_TIMEOUT    = -111,
+    IR_QUERY_FAIL       = -112,
+
+    /*audio line in test*/
+    AUDIO_LINEIN_TIMEOUT = -120,
+
 } RET_STA;
 
 typedef enum _SDCARD_EVENT_ID {
