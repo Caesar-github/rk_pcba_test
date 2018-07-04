@@ -817,8 +817,10 @@ static void tcp_client_process(int stock_fd)
         recv_num = recv(stock_fd, recv_buf, sizeof(recv_buf), 0);
         log_info("recv_buf is :%s \n",recv_buf);
         if (recv_num <= 0) {
-            log_err("recv error:%s\n", strerror(errno));
-            goto ERR_EXIT;
+            log_err("recv error:%s. goto exit\n", strerror(errno));
+            //goto ERR_EXIT;
+            goto EXIT;  //chad.ma modified, recv_num < 0 means host disconnect socket
+                          //here we exit normal.
         }
         recv_buf[recv_num]='\0';
 
@@ -838,6 +840,7 @@ static void tcp_client_process(int stock_fd)
 
 ERR_EXIT:
     close(stock_fd);
+    log_info("-------- exit pcbatest server--------\n");
     exit(-1);
 EXIT:
     exit(0);
@@ -903,7 +906,8 @@ int main(int argc, char **argv)
     if (server_sockfd < 0)
         log_err("tcp server init fail\n");
 
-    while(1) {
+   // while(1) {
+    {
         /* accept a connection */
         client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_addr, &client_addr_len);
         if (client_sockfd < 0) {
@@ -929,6 +933,15 @@ int main(int argc, char **argv)
         }
     }
     close(server_sockfd);
+
+#if 1
+    int status;
+    waitpid(pid, &status, 0);
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+        log_err("Error in (Status %d)\n", WEXITSTATUS(status));
+        return -1;
+    }
+#endif
 
     return 0;
 }

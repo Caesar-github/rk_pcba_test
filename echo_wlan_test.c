@@ -101,7 +101,6 @@ static int calc_rssi_lvl(int rssi)
 */
 int wlan_exec(const char *cmd, char *path)
 {
-    char command[128];
     char ssid[128];
     int signal_level;
     int ch=0;
@@ -150,14 +149,15 @@ void *wlan_test(void *argv)
 
     //2、开启wlan0端口
     system(WLAN_START_UP_COMMAND);
+    sleep(2);
 
     //3、启动无线网卡管理程序wpa_supplicant
     system(WLAN_MANAGE_START);
-    sleep(1);
+    sleep(2);
 
     //4、扫描无线网络
     system(WLAN_SCAN_COMMAND);
-    sleep(2);
+    sleep(3);
 
     //5、显示出WiFi信息
     test_flag = wlan_exec(WLAN_SCAN_RESULT,SCAN_RESULT_FILE);

@@ -189,7 +189,7 @@ int rtc_get_system_time_test(time_t *local_time)
 
 void *rtc_test(void *argv)
 {
-    char time_set[32] = {"20170513.180010" };   //需要设置的系统时间符号“.”前面是年月日，后面是时分秒
+    char time_set[32] = {"20180101.120000" };   //需要设置的系统时间符号“.”前面是年月日，后面是时分秒
     int ret =0;
     time_t lt_set,lt_get1,lt_get2;
     char cmd[128];

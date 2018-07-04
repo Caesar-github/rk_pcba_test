@@ -88,7 +88,7 @@ int linear_amplification(void *data, void *out, int bytes)
 			short raw = (*((short *)data + i + j));
 			int tmp_data = (int)raw;
 #if 1
-			tmp_data = tmp_data << 7;
+			tmp_data = tmp_data << 4;
 			if(tmp_data > 32767) {
 				tmp_data = 32767;
 			} else if(tmp_data < -32768) {
@@ -101,6 +101,54 @@ int linear_amplification(void *data, void *out, int bytes)
 	}
     return 0;
 }
+
+int linear_amplification4(void *data, void *out, int bytes)
+{
+    int i = 0, j = 0;
+	int mChannels = AUDIO_CHANNAL_CNT;
+	for (i = 0; i < bytes / 2; ) {
+		for (j = 0; j < mChannels; j++) {
+			short raw = (*((short *)data + i + j));
+			int tmp_data = (int)raw;
+#if 1
+			tmp_data = tmp_data << 4;
+			if(tmp_data > 32767) {
+				tmp_data = 32767;
+			} else if(tmp_data < -32768) {
+				tmp_data = -32768;
+			}
+#endif
+			*((short *)out + i + j) = (short)tmp_data;
+		}
+		i += mChannels;
+	}
+    return 0;
+}
+
+
+int linear_amplification5(void *data, void *out, int bytes)
+{
+    int i = 0, j = 0;
+	int mChannels = AUDIO_CHANNAL_CNT;
+	for (i = 0; i < bytes / 2; ) {
+		for (j = 0; j < mChannels; j++) {
+			short raw = (*((short *)data + i + j));
+			int tmp_data = (int)raw;
+#if 1
+			tmp_data = tmp_data << 6;
+			if(tmp_data > 32767) {
+				tmp_data = 32767;
+			} else if(tmp_data < -32768) {
+				tmp_data = -32768;
+			}
+#endif
+			*((short *)out + i + j) = (short)tmp_data;
+		}
+		i += mChannels;
+	}
+    return 0;
+}
+
 
 int preProcessBuffer(void *data, void *out, int bytes)
 {
@@ -165,7 +213,7 @@ int ringmic_test(char *result, int flag)
 		system("rm /tmp/ringmic_vibration.pcm");
 		system("aplay /data/vibration.wav &");
 		usleep(200000);
-		system("arecord -D hw:rockchippdmmica -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_vibration.pcm");
+		system("arecord -D hw:0,0 -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_vibration.pcm");
 	} else {
 		log_info("Start record test.\n");
 		sprintf(path, "%s", "/tmp/ringmic_record.pcm");
@@ -174,7 +222,7 @@ int ringmic_test(char *result, int flag)
 		system("rm /tmp/ringmic_record.pcm");
 		system("aplay /data/rectest_400hz.wav &");
 		usleep(200000);
-		system("arecord -D hw:rockchippdmmica -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_record.pcm");
+		system("arecord -D hw:0,0 -t raw -f S16_LE -c 8 -r 16000 -d 15 /tmp/ringmic_record.pcm");
 	}
 	system("killall -9 arecord");
 	system("killall aplay");
@@ -212,7 +260,12 @@ int ringmic_test(char *result, int flag)
 		return -ENOMEM;
 	}
 	memset(gain_buff, 0, rf_len);
-	linear_amplification(rf_buff, gain_buff, rf_len);
+
+	if (flag)   //vibration
+	    linear_amplification4(rf_buff, gain_buff, rf_len);
+    else    //record
+        linear_amplification5(rf_buff, gain_buff, rf_len);
+
 	memcpy(rf_buff, gain_buff, rf_len);
 	free(gain_buff);
 	FILE *fp;
@@ -343,6 +396,7 @@ int main()
 			if (record_ret[i]) {
 				ispass = 0;
 				*(start++) = '1' + i;
+                *start++ = ' ';
 			}
 		}
 	}

@@ -21,7 +21,7 @@ set(SRC_LIST
 	echo_sdcard_test.c
 	echo_usbhost_test.c
 	echo_auto_test.c
-    echo_ir_test.c
+	echo_ir_test.c
 )
 
 foreach(obj_source ${SRC_LIST})

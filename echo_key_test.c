@@ -52,6 +52,7 @@
 #define KEY_MUTE_CODE       113
 #define KEY_PLAY_CODE       207
 #define KEY_MODE_CODE       373
+#define KEY_POWER		    116
 
 
 #define KEY_VALID_NUM              6    //3308 evb v11
