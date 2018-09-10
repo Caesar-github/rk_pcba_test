@@ -179,7 +179,7 @@ static int pcba_test_result_rw(PCBA_SINGLE_PARA *recv_paras, char *w_buf, char *
         log_info("=================fucntion: %s================\n",__func__);
         log_info("write result ** result_filename is :%s\n",result_filename);
         if(w_buf[0]!='\0'){
-            fd = open(result_filename, O_CREAT | O_WRONLY   | O_TRUNC);
+            fd = open(result_filename, O_CREAT | O_WRONLY | O_TRUNC);
             if (fd < 0) {
                 log_err("open %s fail, errno = %d\n", result_filename, errno);
                 ret = errno;
@@ -400,18 +400,18 @@ static int start_pcba_test_preproccess(PCBA_SINGLE_PARA *recv_paras, int test_fl
 
     if (!test_flag) {
         log_err("not enter pcba test mode \n");
-        ret = TEST_MODE_ERR;
+        return TEST_MODE_ERR;
     }
 
     snprintf(result_filename, sizeof(result_filename),
-        "%s/%s_result", TEST_RESULT_SAVE_PATH,
-        recv_paras[INDEX_TEST_ITEM].valuestr);
+            "%s/%s_result", TEST_RESULT_SAVE_PATH,
+            recv_paras[INDEX_TEST_ITEM].valuestr);
     if (access(result_filename, F_OK) == 0)
         return TEST_RESULT_EXIST;
 
     if (process_is_exists(recv_paras[INDEX_TEST_ITEM].valuestr)) {
         log_err("start test fail, test item %s already exists\n",
-            recv_paras[INDEX_TEST_ITEM].valuestr);
+                recv_paras[INDEX_TEST_ITEM].valuestr);
         ret = TEST_ITEM_BUSY;
     }
 
@@ -425,10 +425,10 @@ static int stop_pcba_test(PCBA_SINGLE_PARA *recv_paras)
     char test_item_process[COMMAND_VALUESIZE] = {0};
 
     snprintf(result_filename, sizeof(result_filename),
-        "%s/%s_result", TEST_RESULT_SAVE_PATH,
-        recv_paras[INDEX_TEST_ITEM].valuestr);
+            "%s/%s_result", TEST_RESULT_SAVE_PATH,
+            recv_paras[INDEX_TEST_ITEM].valuestr);
     if (access(result_filename, F_OK) == 0)
-            remove(result_filename);
+        remove(result_filename);
 
     if (*recv_paras[INDEX_MSG].valuestr == '1') {
        int fd = -1;
@@ -436,16 +436,16 @@ static int stop_pcba_test(PCBA_SINGLE_PARA *recv_paras)
 
        log_info("stop_pcba_test: msg = %s\n", recv_paras[INDEX_MSG].valuestr);
 
-       memset(result_filename, 0,sizeof(result_filename));
+       memset(result_filename, 0, sizeof(result_filename));
        snprintf(result_filename, sizeof(result_filename),
              "%s/stop_result", TEST_RESULT_SAVE_PATH);
 
        strncpy(buf,recv_paras[INDEX_MSG].valuestr,sizeof(buf));
 
-       fd = open(result_filename, O_CREAT | O_WRONLY   | O_TRUNC);
+       fd = open(result_filename, O_CREAT | O_WRONLY | O_TRUNC);
        if (fd < 0) {
            log_err("open %s fail, errno = %d\n", result_filename, errno);
-           //ret = errno;
+           return -1;
        }
 
        int w_len = write(fd, buf, strlen(buf));
@@ -818,8 +818,8 @@ static void tcp_client_process(int stock_fd)
         log_info("recv_buf is :%s \n",recv_buf);
         if (recv_num <= 0) {
             log_err("recv error:%s. goto exit\n", strerror(errno));
-            //goto ERR_EXIT;
-            goto EXIT;  //chad.ma modified, recv_num < 0 means host disconnect socket
+            goto ERR_EXIT;
+            //goto EXIT;  //chad.ma modified, recv_num < 0 means host disconnect socket
                           //here we exit normal.
         }
         recv_buf[recv_num]='\0';
@@ -906,8 +906,7 @@ int main(int argc, char **argv)
     if (server_sockfd < 0)
         log_err("tcp server init fail\n");
 
-   // while(1) {
-    {
+    while(1) {
         /* accept a connection */
         client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_addr, &client_addr_len);
         if (client_sockfd < 0) {
@@ -934,7 +933,7 @@ int main(int argc, char **argv)
     }
     close(server_sockfd);
 
-#if 1
+#if 0
     int status;
     waitpid(pid, &status, 0);
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {

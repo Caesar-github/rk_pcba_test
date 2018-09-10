@@ -55,19 +55,13 @@ int sdcard_auto_test()
     if (status == -1) {
         log_info("system cmd run error...\n");
         ret = -1;
-    }
-    else
-    {
+    } else {
         log_info("exit status value = [0x%x]\n", status);
-        if (WIFEXITED(status))
-        {
-            if (0 == WEXITSTATUS(status))
-            {
+        if (WIFEXITED(status)) {
+            if (0 == WEXITSTATUS(status)) {
                 log_info("run shell script successfully.\n");
                 ret = 0;
-            }
-            else
-            {
+            } else {
                 if (1 == WEXITSTATUS(status)) {
                     log_info("run shell script fail, script exit code: %d\n", WEXITSTATUS(status));
                     ret = 1;
@@ -76,9 +70,7 @@ int sdcard_auto_test()
                     ret = 2;
                 }
             }
-        }
-        else
-        {
+        } else {
             log_info("exit status = [%d]\n", WEXITSTATUS(status));
             ret = -1;
         }

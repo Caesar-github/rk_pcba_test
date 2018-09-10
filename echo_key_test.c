@@ -52,7 +52,7 @@
 #define KEY_MUTE_CODE       113
 #define KEY_PLAY_CODE       207
 #define KEY_MODE_CODE       373
-#define KEY_POWER		    116
+#define KEY_POWER           116
 
 
 #define KEY_VALID_NUM              6    //3308 evb v11
@@ -136,7 +136,7 @@ static int save_scan_result(char *result_buf)
              TEST_RESULT_SAVE_PATH,
              bin_name);
 
-    fd = open(result_filename, O_CREAT | O_WRONLY   | O_TRUNC);
+    fd = open(result_filename, O_CREAT | O_WRONLY | O_TRUNC);
 
     if (fd < 0) {
         log_err("open %s fail, errno = %d\n", result_filename, errno);
