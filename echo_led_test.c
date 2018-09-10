@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
 	log_info("led test start...\n");
 
 	//* 注册信号处理函数
-	signal(SIGTERM,leds_all_off);
+	signal(SIGTERM,(__sighandler_t)leds_all_off);
 
 	gettimeofday(&t1, NULL);
     while(1)

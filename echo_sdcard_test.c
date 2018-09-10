@@ -25,6 +25,7 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define LOG_TAG "sdcard_test"
 #include "common.h"
@@ -106,6 +107,22 @@ int main(int argc, char *argv[])
         log_info("sdcard test Timgout...\n");
     }
 
+    if (test_flag == 0) {
+        int fd = -1;
+        double cap;
+        char sdcard_size[32] = {0};
+        fd = open("/run/sd_capacity", O_RDONLY);
+        memset(sdcard_size, 0 ,sizeof(sdcard_size));
+        int r_len = read(fd, sdcard_size, sizeof(sdcard_size));
+        if (r_len <= 0) {
+			log_err("read %s fail, errno = %d\n", "/run/sd_capacity", errno);
+		}
+        //fgets(sdcard_size, 32, fd);
+        cap = strtod(sdcard_size, NULL);
+        snprintf(sdcard_size, sizeof(sdcard_size), "capacity:%.4fG ", cap * 1.0 / 1024 / 1024);
+        strcat(buf,": ");
+        strcat(buf, sdcard_size);
+    }
     //strcat(buf, result);
     send_msg_to_server(buf, result, err_code);
     return 0;

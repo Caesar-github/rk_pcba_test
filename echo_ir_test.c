@@ -236,7 +236,7 @@ int main(int argc, char **argv)
 
     log_info("key test process start...\n");
     //* 注册信号处理函数
-    signal(SIGTERM, ir_result_send);
+    signal(SIGTERM, (__sighandler_t)ir_result_send);
 
     for (i = 0; i < MAX_INPUT_COUNT; i++) {
         sprintf(path, "/dev/input/event%d", i);

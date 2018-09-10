@@ -102,6 +102,7 @@ typedef enum _PCBA_CMD_NUM {
 	STOP_CMD = 3,
 	QUERY_CMD = 4,
 	HEARBEAT_CMD = 5,
+	CAPTURE_CMD = 6,
 }PCBA_CMD_NUM;
 
 typedef struct _PCBA_CMD_TYPE {
@@ -126,6 +127,9 @@ PCBA_CMD_TYPE recv_cmd_type[] = {
 	},
 	[HEARBEAT_CMD] = {
 		.name = "HEARBEAT",
+	},
+	[CAPTURE_CMD] = {
+		.name = "CAPTURE_IMAGE",
 	},
 };
 

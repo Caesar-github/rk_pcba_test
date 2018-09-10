@@ -25,12 +25,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/time.h>
 
 #include "audio_test.h"
 
 #define LOG_TAG "audio_play_test"
 #include "common.h"
 #define AUDIO_EVENT_TIMEOUT -85
+#define AUDIO_TIME 5
 
 //*Audio test
 void *audio_play_test(void *argv)
@@ -40,7 +42,17 @@ void *audio_play_test(void *argv)
     fprintf(stderr,"=========function :%s start=============\n",__func__);
     //* 1°¢œ»∑≈“Ù
     fprintf(stderr,"Start test audio record and play.\n");
+#ifdef PCBA_PX3SE
+    sprintf(cmd,"aplay -d %d %s/%s",AUDIO_TIME,PCBA_TEST_PATH,AUDIO_PLAY_FILE);
+#endif
+
+#ifdef PCBA_3308
     sprintf(cmd,"aplay %s/%s",PCBA_TEST_PATH,AUDIO_PLAY_FILE);
+#endif
+#ifdef PCBA_3229GVA
+    sprintf(cmd,"aplay %s/%s",PCBA_TEST_PATH,AUDIO_PLAY_FILE);
+#endif
+
     system(cmd);
     fprintf(stderr,"=========function :%s finish=============\n",__func__);
 }
@@ -53,7 +65,15 @@ int main(int argc, char *argv[])
 	char buf[COMMAND_VALUESIZE] = "audio_play_test";
     char result[COMMAND_VALUESIZE] = RESULT_VERIFY;
 
+#ifdef PCBA_3308
+    system("amixer cset numid=4 26");
+#endif
+#ifdef PCBA_3308
     system("amixer set Master Playback 30%");
+#endif
+#ifdef PCBA_3229GVA
+    system("amixer cset numid=4 26");
+#endif
 	log_info("audio play test start...\n");
 	gettimeofday(&t1, NULL);
     while(1)

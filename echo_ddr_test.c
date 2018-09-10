@@ -29,7 +29,6 @@
 
 #define LOG_TAG "ddr_test"
 #include "common.h"
-#define DDR_PROC_ERR -65
 
 #define EMMCPATH "/sys/bus/mmc/devices/mmc0:0001/block/mmcblk0/size"
 #define READ_DDR_COMMAND "cat /proc/zoneinfo | busybox grep present | \
@@ -60,7 +59,6 @@ int ddr_exec(const char *cmd, char *ddrsize_char, unsigned int length)
 /* 内存是每页4KB，echo样机DDR内存为128M*16 DDR3 SDRAM即2Gb也就是256MB*/
 void *ddr_test(void *argv)
 {
-
 	int ddr_ret = 0;
 	char ddrsize_char[20];
 	int ddr_size = 0;
@@ -88,10 +86,10 @@ void *ddr_test(void *argv)
     printf("=========== ddr test success ==========\n");
 
 	return (void*)ddr_ret;
-	fail:
-        printf("=========== ddr test failed ==========\n");
+fail:
+    printf("=========== ddr test failed ==========\n");
 
-        return (void*)ddr_ret;
+    return (void*)ddr_ret;
 }
 
 //主函数启动emmc_test
@@ -105,6 +103,12 @@ int main(int argc, char *argv[])
     {
         strcpy(result,RESULT_FAIL);
         err_code = DDR_PROC_ERR;
+    } else {
+        char ddrSize[32] = {0};
+        snprintf(ddrSize, sizeof(ddrSize), "size:%dMB",  DDR_CAPACITY);
+        strcat(buf, ": ");
+        strcat(buf, ddrSize);
     }
+
     send_msg_to_server(buf, result, err_code);
 }

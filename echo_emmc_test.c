@@ -24,16 +24,26 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include "unistd.h"
 
 #include "emmc_test.h"
 
 #define LOG_TAG "emmc_test"
 #include "common.h"
-#define EMMC_PROC_ERR -75
 
+
+//
+#ifdef PCBA_PX3SE
+#define EMMCPATH "/sys/bus/mmc/devices/mmc0:1234/block/mmcblk0/size"
+#else
 #define EMMCPATH "/sys/bus/mmc/devices/mmc0:0001/block/mmcblk0/size"
+#endif
+
 #define READ_DDR_COMMAND "cat /proc/zoneinfo | busybox grep present | \
 busybox awk 'BEGIN{a=0}{a+=$2}END{print a}'"
+
+#define RKNAND_TEST_CMD "cat /proc/rknand > %s"
+#define RKNAND_TEST_FILE "/tmp/rknand_test.txt"
 
 
 /* for emmc  */
@@ -73,11 +83,13 @@ int get_emmc_size(char *size_data)
     {
         if ((size > emmc_size) && (size <= emmc_size*2))   /*2 - 512 GB*/
             return emmc_size*2;
+
         emmc_size *=2;
     }
     return -1;
 }
 
+#ifdef PCBA_PX3SE//emmc
 void *emmc_test(void *argv)
 {
 	int emmc_ret = 0;
@@ -109,7 +121,6 @@ void *emmc_test(void *argv)
         {
             goto fail;
         }
-
 	}
 	else
 	{
@@ -118,13 +129,54 @@ void *emmc_test(void *argv)
 	printf("=======  emmc_test success  ========\n");
 
 	return (void*)emmc_ret;
-	fail:
-        printf("=======  emmc_test failed  ========\n");
+fail:
+    printf("=======  emmc_test failed  ========\n");
 
-        return (void*)emmc_ret;
+    return (void*)emmc_ret;
 }
+#endif
 
-//主函数启动emmc_test
+#ifdef PCBA_3308
+void *emmc_test(void *argv)
+{
+    char cmd[128];
+    char buf[128];
+    FILE *fp;
+	int emmc_ret = -1;
+
+    printf("=======  emmc test starting   ========\n");
+
+    sprintf(cmd,RKNAND_TEST_CMD,RKNAND_TEST_FILE);
+    system(cmd);
+    printf("cmd is: %s.\n",cmd);
+    sleep(1);
+    fp = fopen(RKNAND_TEST_FILE, "r");
+     //如果文件打开失败，则输出错误信息
+    if (!fp)
+    {
+        printf("%s fopen err:%s\n",__func__,strerror(errno));
+        return (void*)-1;
+    }
+
+    //检测是否包含 "Device Capacity: 4096 MB"信息，如果有说明测试正常，否则测试失败
+    while(!feof(fp))
+    {
+        fgets(buf,sizeof(buf),fp);
+         if(strstr(buf,"Device Capacity: 256 MB")!=NULL)
+         {
+             emmc_ret = 0;
+             break;
+         }
+    }
+    fclose(fp);
+    remove(RKNAND_TEST_FILE);
+
+    printf("\n=================== function :%s finish======================\n",__func__);
+    return (void*)emmc_ret;
+}
+#endif
+
+//?÷oˉêy???ˉemmc_test
 int main(int argc, char *argv[])
 {
     int test_flag = 0,err_code = 0;

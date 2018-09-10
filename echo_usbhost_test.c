@@ -114,7 +114,24 @@ int main(int argc, char *argv[])
         log_info("usbhost test Timgout...\n");
     }
 
-    strcat(buf, result);
+    if (test_flag == 0) {
+        int fd = -1;
+        double cap;
+        char usbhost_size[32] = {0};
+        fd = open("/run/usbhost_capacity", O_RDONLY);
+        memset(usbhost_size, 0 ,sizeof(usbhost_size));
+        int r_len = read(fd, usbhost_size, sizeof(usbhost_size));
+        if (r_len <= 0) {
+			log_err("read %s fail, errno = %d\n", "/run/usbhost_capacity", errno);
+		}
+        //fgets(sdcard_size, 32, fd);
+        cap = strtod(usbhost_size, NULL);
+        snprintf(usbhost_size, sizeof(usbhost_size), "capacity:%.4fG ", cap * 1.0 / 1024 / 1024);
+        strcat(buf,": ");
+        strcat(buf, usbhost_size);
+    }
+
+    //strcat(buf, result);
     send_msg_to_server(buf, result, err_code);
     return 0;
 }

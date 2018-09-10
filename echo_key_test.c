@@ -9,7 +9,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ * 	 http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <assert.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,33 +36,48 @@
 #define KEY_INPUT_EVENT1 "/dev/input/event1"
 #define KEY_INPUT_EVENT2 "/dev/input/event2"
 
-
-#define KEY_TIMEOUT_DOWN    60
-#define KEY_TIMEOUT_UP      5
-
-#define KEY_QUERY_FAIL       -42
-
-/*  key value */
-#define KEY_DOWN_VAL    1
-#define KEY_UP_VAL      2
-
-/* key code */
-#define KEY_VOLUP_CODE      115
-#define KEY_VOLDN_CODE      114
-#define KEY_MUTE_CODE       113
-#define KEY_PLAY_CODE       207
-#define KEY_MODE_CODE       373
-#define KEY_POWER           116
-
-
-#define KEY_VALID_NUM              6    //3308 evb v11
+#define KEY_TIMEOUT_DOWN	60
+#define KEY_TIMEOUT_UP		5
 
 typedef struct KEY_BOARD_st {
     char *key_name;
     int key_value;
     int key_press_flag;
+    int key_cnt;
 } KEY_st;
 
+
+#ifdef PCBA_PX3SE
+#define KEY_VALID_NUM       5    //PX3SE V11
+
+/* key code */
+#define KEY_HOME_CODE       102
+#define KEY_MENU_CODE       59
+#define KEY_ESC_CODE        158
+#define KEY_VOLUP_CODE      115
+#define KEY_VOLDOWN_CODE    114
+
+KEY_st gkey_test[KEY_VALID_NUM] = {
+
+    {"vol+",    KEY_VOLUMEUP,    0, 0},
+    {"vol-",    KEY_VOLUMEDOWN,  0, 0},
+    {"menu",    KEY_MENU,     0, 0},
+    {"esc",     KEY_F1,    0, 0},
+    {"home",    KEY_HOME,    0, 0},
+//  {"resv",    212,        0},
+};
+#endif
+
+#ifdef PCBA_3308
+#define KEY_VALID_NUM       6    //3308 evb v11
+
+/* key code */
+#define KEY_VOLUP_CODE      115
+#define KEY_VOLDN_CODE      114
+#define KEY_MUTE_CODE       113
+#define KEY_POWER		    116
+#define KEY_PLAY_CODE       207
+#define KEY_MODE_CODE       373
 
 KEY_st gkey_test[KEY_VALID_NUM] = {
     {"VOL+",    KEY_VOLUMEUP,    0},
@@ -73,6 +88,16 @@ KEY_st gkey_test[KEY_VALID_NUM] = {
     {"POWER",   KEY_POWER,    0},
 
 };
+
+#endif
+
+#ifdef PCBA_3229GVA
+//TODO:
+
+#endif
+
+static char result[COMMAND_VALUESIZE] = RESULT_FAIL;
+
 static int isAllKeyPressed(KEY_st *key_array)
 {
     int i = 0;
@@ -120,10 +145,16 @@ static char *assemble_info(char *key_info_buf, int buf_size, int key_index)
     memset(key_info_buf, buf_size, 0);
 
     snprintf(msg, sizeof(msg), "key name:%s", gkey_test[key_index].key_name);
+#ifdef PCBA_PX3SE
+    snprintf(key_info_buf, buf_size, "x<%s>,<%s>,<%d>", msg, RESULT_KEY_PRESS, \
+             gkey_test[key_index].key_cnt);
+#else
     snprintf(key_info_buf, buf_size, "x<%s>,<%s>,<%d>", msg, RESULT_KEY_PRESS, error_code);
+#endif
 
     return key_info_buf;
 }
+
 static int save_scan_result(char *result_buf)
 {
     int fd = -1;
@@ -136,14 +167,14 @@ static int save_scan_result(char *result_buf)
              TEST_RESULT_SAVE_PATH,
              bin_name);
 
-    fd = open(result_filename, O_CREAT | O_WRONLY | O_TRUNC);
+    fd = open(result_filename, O_CREAT | O_WRONLY   | O_TRUNC);
 
     if (fd < 0) {
         log_err("open %s fail, errno = %d\n", result_filename, errno);
         ret = errno;
     }
 
-    assert(strlen(result_buf) <= COMMAND_VALUESIZE);
+    //assert(strlen(result_buf) <= COMMAND_VALUESIZE);
     int w_len = write(fd, result_buf, strlen(result_buf));
 
     if (w_len <= 0) {
@@ -159,74 +190,69 @@ static int save_scan_result(char *result_buf)
     return ret;
 }
 
-static char result[COMMAND_VALUESIZE] = RESULT_FAIL;
 
 static int key_wait_event(int maxfd, fd_set *readfds, int time)
 {
-    int ret;
-    struct timeval timeout;
+	int ret;
+	struct timeval timeout;
 
-    FD_ZERO(readfds);
-    FD_SET(maxfd, readfds);
-    timeout.tv_sec = time;
-    timeout.tv_usec = 0;
-    ret = select(maxfd + 1, readfds, NULL, NULL, &timeout);
+	FD_ZERO(readfds);
+	FD_SET(maxfd, readfds);
+	timeout.tv_sec = time;
+	timeout.tv_usec = 0;
+	ret = select(maxfd + 1, readfds, NULL, NULL, &timeout);
+	switch (ret) {
+		case -1:
+			return -1;
+		case 0:
+			log_err("select timeout(%ds)\n", time);
+			return 1;
+		default:
+			if (FD_ISSET(maxfd, readfds)) {
+				FD_CLR (maxfd, readfds);
+				return 0;
+			}
+			break;
+	}
 
-    switch (ret) {
-    case -1:
-        return -1;
-
-    case 0:
-        log_err("select timeout(%ds)\n", time);
-        return 1;
-
-    default:
-        if (FD_ISSET(maxfd, readfds)) {
-            FD_CLR (maxfd, readfds);
-            return 0;
-        }
-
-        break;
-    }
-
-    return -1;
+	return -1;
 }
 
 static int key_event_read(int fd, struct input_event *buf)
 {
-    int read_len = 0;
+	int read_len = 0;
 
-    read_len = read(fd, buf, sizeof(*buf));
+	read_len = read(fd, buf, sizeof(*buf));
+	if (read_len < 0) {
+		if ((errno != EINTR) && (errno != EAGAIN))
+			return 0;
+		return -1;
+	}
 
-    if (read_len < 0) {
-        if ((errno != EINTR) && (errno != EAGAIN))
-            return 0;
+	if (buf->type)
+		return 1;
 
-        return -1;
-    }
-
-    if (buf->type)
-        return 1;
-
-    return 0;
+	return 0;
 }
 
 //* 信号处理函数，在结束进程前，为按键测试返回一个结果；
 static int key_result_send(int sign_no)
 {
-    int err_code = 0;
-    printf("====================function : %s start =================\n", __func__);
+    int err_code =0;
+    printf("====================function : %s start =================\n",__func__);
 
-    if (!memcmp(result, RESULT_FAIL, strlen(RESULT_FAIL)))
-        err_code = KEY_QUERY_FAIL;
+//    if (!memcmp(result, RESULT_PASS, strlen(RESULT_PASS)))
+//        err_code = KEY_PROC_ERR;
 
+    strcpy(result, RESULT_VERIFY);
     send_msg_to_server("key_test", result, err_code);
 
-    printf("====================function : %s finished =================\n", __func__);
+    printf("====================function : %s finished =================\n",__func__);
     exit(0);
 }
 
 #define MAX_INPUT_COUNT (4)
+
 int main(int argc, char **argv)
 {
     int fd;
@@ -247,7 +273,7 @@ int main(int argc, char **argv)
 
     log_info("key test process start...\n");
     //* 注册信号处理函数
-    signal(SIGTERM, key_result_send);
+    signal(SIGTERM, (__sighandler_t)key_result_send);
 
     for (i = 0; i < MAX_INPUT_COUNT; i++) {
         sprintf(path, "/dev/input/event%d", i);
@@ -301,30 +327,29 @@ int main(int argc, char **argv)
 
                             for (idx = 0; idx < KEY_VALID_NUM; idx ++) {
                                 if (key_event.code == gkey_test[idx].key_value) {
-                                    if (gkey_test[idx].key_press_flag == 0)
+                                    if (gkey_test[idx].key_press_flag == 0) {
                                         gkey_test[idx].key_press_flag = 1;
+                                        #ifdef PCBA_PX3SE
+                                        gkey_test[idx].key_cnt = 1;
+                                        #endif
+                                    } else {
+                                        #ifdef PCBA_PX3SE
+                                        gkey_test[idx].key_cnt++;
+                                        printf("\t\t %s : %d \n\n", gkey_test[idx].key_name,gkey_test[idx].key_cnt);
+                                        #endif
+                                    }
 
                                     assemble_info(buf, COMMAND_VALUESIZE, idx);
                                     save_scan_result(buf);
                                 } else
                                     continue;
                             }
-
-#if 1
-
+#ifndef PCBA_PX3SE
                             if (isAllKeyPressed(gkey_test)) {
-                                //int i =0;
                                 log_info(" ======== key test is over ========= \n");
                                 strcpy(result, RESULT_VERIFY);
-
-                                //for (i= 0; i < idx; i++) {
-                                //    strcat(buf,gkey_test[i].key_name);
-                                //    strcat(buf," ");
-                                //}
-                                //dumpKeyPressInfo(gkey_test);
                                 break;
                             }
-
 #endif
                         }
                     }
@@ -342,7 +367,6 @@ int main(int argc, char **argv)
                         strcat(buf, " ");
                     }
                 }
-
                 strcat(buf, " NOT PRESS!");
             }
 

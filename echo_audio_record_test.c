@@ -26,12 +26,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <signal.h>
+#include <sys/time.h>
 
 #include "audio_test.h"
 
 #define LOG_TAG "audio_record_test"
 #include "common.h"
-#define RECORD_TIME 2
+#define RECORD_TIME 5
 #define AUDIO_EVENT_TIMEOUT -85
 
 //*Audio test
@@ -41,9 +42,21 @@ void *audio_record_test(void *argv)
 
     fprintf(stderr,"=========function :%s start=============\n",__func__);
     //指定Card 3，device 0，录音3秒
+#ifdef PCBA_3308
     sprintf(cmd,"arecord -D hw:3,0 -f S16_LE -c 2 -r 16000 -d %d %s/%s",RECORD_TIME,TEST_RESULT_SAVE_PATH,AUDIO_RECORD_FILE);
+#endif
+
+#ifdef PCBA_PX3SE
+    sprintf(cmd,"arecord -D MainMicCapture -f S16_LE -c 2 -r 16000 -d %d %s/%s",RECORD_TIME,TEST_RESULT_SAVE_PATH,AUDIO_RECORD_FILE);
+#endif
+
+#ifdef PCBA_3229GVA
+//TODO:
+
+#endif
     system(cmd);
     fprintf(stderr,"recording\n ");
+    //sprintf(cmd,"aplay -f S16_LE -c 2 -r 16000 -d %d %s/%s",RECORD_TIME,TEST_RESULT_SAVE_PATH,AUDIO_RECORD_FILE); //放音
     sprintf(cmd,"aplay -f S16_LE -c 2 -r 16000 -d %d %s/%s",RECORD_TIME,TEST_RESULT_SAVE_PATH,AUDIO_RECORD_FILE); //放音
     system(cmd);
     fprintf(stderr,"playing\n ");
@@ -81,7 +94,7 @@ int main(int argc, char *argv[])
 	log_info("audio record test start...\n");
 
 	//* 注册信号处理函数
-	signal(SIGTERM,del_record_pcm);
+	signal(SIGTERM,(__sighandler_t)del_record_pcm);
 
 	gettimeofday(&t1, NULL);
     while(1)

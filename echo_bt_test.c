@@ -17,6 +17,7 @@
  * limitations under the License.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <malloc.h>
 
@@ -24,6 +25,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 //error 相关头文件
 #include <errno.h>
@@ -392,10 +394,23 @@ int bt_test_bluez(void)
     //* 2) 确定蓝牙关闭后，重新给蓝牙上电，加载固件
     sprintf(cmd,"echo 1 > %s",rfkill_state_path);
     system(cmd);
+    //status = system("brcm_patchram_plus1 --enable_hci --no2bytes \
+    //       --use_baudrate_for_download  --tosleep  200000 \
+    //       --baudrate 1500000 --patchram /data/bcm4339a0.hcd /dev/ttyS1 &");
+#ifdef PCBA_3308
     status = system("brcm_patchram_plus1 --enable_hci --no2bytes \
            --use_baudrate_for_download  --tosleep  200000 \
            --baudrate 1500000 --patchram /system/etc/firmware/BCM4345C0.hcd /dev/ttyS4 &");
+#endif
 
+#ifdef PCBA_PX3SE
+    status = system("rtlbt  -n -s 115200 /dev/ttyS1 rtk_h5 > /data/cfg/hciattach.txt  2>&1 &");
+#endif
+#ifdef PCBA_3229GVA
+    status = system("brcm_patchram_plus1 --enable_hci --no2bytes \
+           --use_baudrate_for_download  --tosleep  200000 \
+           --baudrate 1500000 --patchram /data/bcm4339a0.hcd /dev/ttyS1 &");
+#endif
     test_flag = confirm_firmware_test();
     if(test_flag < 0)
         goto out;
@@ -438,11 +453,11 @@ void *bt_test(void *argv)
 	}
     printf("Bluetooth is /sys/class/rfkill/rfkill:%d\n",rfkill_bt_id);
 
-#if 0
     //2、获取Bluetooth芯片名字，chip name
     ret = bt_get_chip_name(bt_chip_name,sizeof(bt_chip_name));
     if(ret < 0){
 		printf("function: %s failed! %s\n",__func__,strerror(errno));
+		goto fail;
 	}
 	printf("Bluetooth chip name is %s\n",bt_chip_name);
 
@@ -450,9 +465,9 @@ void *bt_test(void *argv)
     bt_chip_type = get_chip_type(bt_chip_name);
     if(bt_chip_type < 0){
 		printf("function: %s failed! %s\n",__func__,strerror(errno));
+		goto fail;
 	}
     printf("Bluetooth chip type is: bt_chip_type = %d\n", bt_chip_type);
-#endif
 
     //4、测试Bluetooth主程序
      ret = bt_test_bluez();

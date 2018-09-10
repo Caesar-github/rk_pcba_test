@@ -24,6 +24,7 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define LOG_TAG "rotary_test"
 #include "common.h"
@@ -107,7 +108,7 @@ int main(int argc, char **argv)
 	log_info("rotary test process start...\n");
 
     //* 注册信号处理函数
-	signal(SIGTERM,rotary_result_send);
+	signal(SIGTERM,(__sighandler_t)rotary_result_send);
 
 	fd = open(ROTARY_INPUT_EVENT, O_RDONLY | O_NOCTTY);
 	if (fd < 0) {

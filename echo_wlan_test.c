@@ -44,6 +44,13 @@
 #define SOFTAP_MSG "dmesg | grep SSID | tail -n 6 > %s"
 #define MSG_FILE "/tmp/softap_start_msg.txt"
 
+#ifdef PCBA_PX3SE
+#define CONNECT_AP_CMD "wpa_supplicant -i wlan0 -c /data/wpa_conf &"
+#define CONNECT_AP_STATUS "wpa_cli status > %s"
+#define CONNECT_AP_RESULT_FILE "/tmp/wlan_connect_result.txt"
+
+#define REPORT_SSID     "Rockchip" //指定扫描的的wifi ssid名称
+#endif
 
 //* 1、关闭后台wpa_supplicant进程
 static int close_wpa_supplicant(void)
@@ -101,12 +108,16 @@ static int calc_rssi_lvl(int rssi)
 */
 int wlan_exec(const char *cmd, char *path)
 {
+    char result_buf[128];
     char ssid[128];
     int signal_level;
     int ch=0;
+    int fd;
 
      printf("=================== function :%s start======================\n\n",__func__);
 
+    memset(result_buf, 0, sizeof(result_buf));
+    memset(ssid, 0, sizeof(ssid));
     //显示第一个WiFi信息
     FILE *pp = popen(cmd, "r");
     //如果文件打开失败，则输出错误信息
@@ -115,6 +126,18 @@ int wlan_exec(const char *cmd, char *path)
         printf("%s popen err%s\n",__func__,strerror(errno));
         return -1;
     }
+
+#ifdef PCBA_PX3SE
+    /*chad.ma add below*/
+    if (path != NULL) {
+        fd = open(path, O_CREAT | O_WRONLY	| O_TRUNC);
+        if (fd <0) {
+            log_err("open %s fail, errno = %d\n", path, errno);
+            return errno;
+        }
+    }
+    /*chad.ma add up*/
+#endif
 
 	while(!feof(pp))
 	{
@@ -126,10 +149,25 @@ int wlan_exec(const char *cmd, char *path)
             printf("wlan scan result is null\n");
             return -1;
         }
+#ifdef PCBA_PX3SE
+        snprintf(result_buf,sizeof(result_buf),
+                    "SSID:%s Signal Level:%d RSSI:%d\n",
+                    ssid, signal_level, calc_rssi_lvl(signal_level));
+        int w_len = write(fd, result_buf, strlen(result_buf));
+		if (w_len <= 0) {
+			log_err("Write %s fail, errno = %d\n", path, errno);
+			return errno;
+		}
+#endif
+
 	    printf("SSID is: %s,signal level is: %d\n",ssid,signal_level);
 	    printf("SSID is: %s,rssi is: %d\n",ssid,calc_rssi_lvl(signal_level));
 	}
 	pclose(pp);
+
+#ifdef PCBA_PX3SE
+    close(fd);
+#endif
 	printf("\n=================== function :%s finish======================\n",__func__);
 	return 0;
 }
@@ -148,7 +186,33 @@ void *wlan_test(void *argv)
     system("echo 1 > /sys/class/rkwifi/driver");
 
     //2、开启wlan0端口
-    system(WLAN_START_UP_COMMAND);
+    int status = system(WLAN_START_UP_COMMAND);
+
+    /* add by chad ma 20180629 below judge*/
+    if(status == -1) {
+        printf("system run error ....\n");
+        goto fail;
+    } else {
+        log_info("exit status value = [0x%x]\n", status);
+        if (WIFEXITED(status))
+        {
+            if (0 == WEXITSTATUS(status))
+            {
+                log_info("run WLAN_START_UP_COMMAND successfully.\n");
+                //ret = 0;
+            }
+            else
+            {
+                system("rfkill unblock wifi");
+            }
+        }
+        else
+        {
+            log_info("exit status = [%d]\n", WEXITSTATUS(status));
+
+            //ret = -1;
+        }
+    }
     sleep(2);
 
     //3、启动无线网卡管理程序wpa_supplicant
@@ -163,6 +227,11 @@ void *wlan_test(void *argv)
     test_flag = wlan_exec(WLAN_SCAN_RESULT,SCAN_RESULT_FILE);
     if(test_flag<0)
     {
+        //第一次scan失败，再执行一遍;
+        system(WLAN_SCAN_COMMAND);
+        sleep(2);
+        test_flag = wlan_exec(WLAN_SCAN_RESULT,SCAN_RESULT_FILE);
+        if(test_flag<0)
         goto fail;
         //return -1;
     }
@@ -171,16 +240,19 @@ void *wlan_test(void *argv)
     system("ifconfig wlan0 down");
     system("busybox killall wpa_supplicant");      //关闭无线管理程序wpa_supplicant
     return (void*)test_flag;
-    fail:
-        printf("===================Wlan test failed======================\n");
-        system("ifconfig wlan0 down");
-        system("busybox killall wpa_supplicant");      //关闭无线管理程序wpa_supplicant
-        return (void*)test_flag;
+fail:
+    printf("===================Wlan test failed======================\n");
+    system("ifconfig wlan0 down");
+    system("busybox killall wpa_supplicant");      //关闭无线管理程序wpa_supplicant
+    return (void*)test_flag;
 }
 
 int main(int argc, char *argv[])
 {
     int test_flag = 0,err_code = 0;
+    char read_buf[128];
+    int find_flag = 0;
+    FILE *fp;
     char buf[COMMAND_VALUESIZE] = "wlan_test";
     char result[COMMAND_VALUESIZE] = RESULT_PASS;
     test_flag = (int)wlan_test(argv[0]);
@@ -189,5 +261,46 @@ int main(int argc, char *argv[])
         strcpy(result,RESULT_FAIL);
         err_code = WLAN_PROC_ERR;
     }
+
+#ifdef PCBA_PX3SE
+    //从扫描结果保存文件中，扫描指定ssid的signal
+    fp = fopen(SCAN_RESULT_FILE, "r");
+    memset(read_buf, 0 ,sizeof(read_buf));
+     //如果文件打开失败，则输出错误信息
+    if (!fp)
+    {
+        printf("%s fopen err:%s\n",__func__,strerror(errno));
+        return -1;
+    }
+
+    while(!feof(fp))
+    {
+        fgets(read_buf,sizeof(read_buf),fp);
+        if(strstr(read_buf,REPORT_SSID)!= NULL)
+        {
+            find_flag = 1;
+            //注意：read_buf会将一行的回车符也读进去，这里要对read_buf进行改造
+            int len = strlen(read_buf);
+            if ( len < 128) {
+                //assert(len < 128);
+                read_buf[len - 1] = '\0';
+                printf("\n ###Found!!! %s ###\n",read_buf);
+                break;
+            } else {
+                printf("%s ERROR!!! read to much from one line\n",__func__);
+            }
+        }
+    }
+    fclose(fp);
+    //将保存结果复制到buf中
+    if (find_flag) {
+        strcat(buf, ": ");
+        strcat(buf, read_buf);
+    }
+
+    //删除扫描文件
+    //remove(SCAN_RESULT_FILE);
+    printf("\n $$ %s :not found %s $$\n",buf , REPORT_SSID);
+#endif
     send_msg_to_server(buf, result, err_code);
 }

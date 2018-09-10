@@ -103,7 +103,7 @@ int rtc_set_system_time_test(char *time_set, time_t *local_time)
     s = time_set;
     //设置年、月、日,得到的是格林时间
     day = atoi(s);
-    printf("day value is %d\n",day);
+    //printf("day value is %d\n",day);
     tm_p.tm_year = day/10000 - 1900;
     tm_p.tm_mon = (day%10000)/100 - 1;
     tm_p.tm_mday = (day%100);
@@ -116,7 +116,7 @@ int rtc_set_system_time_test(char *time_set, time_t *local_time)
 
     //设置时、分、秒
     hour = atoi(s);
-    printf("hour value is %d\n",hour);
+    //printf("hour value is %d\n",hour);
 
     tm_p.tm_hour = hour/10000;
     tm_p.tm_min = (hour%10000)/100;
@@ -127,21 +127,21 @@ int rtc_set_system_time_test(char *time_set, time_t *local_time)
     *local_time = mktime(&tm_p);
 
     //struct tm *格式输入，打印设置的本地时间
-    printf("asctime(&tm_p) is %s\n",asctime(&tm_p));
+    //printf("asctime(&tm_p) is %s\n",asctime(&tm_p));
     //time_t *格式输入，打印设置的本地时间
-    printf("ctime(local_time) is %s\n",ctime(local_time));
+    //printf("ctime(local_time) is %s\n",ctime(local_time));
 
     /*1、设置系统时间*/
     int ret;
     ret = set_system_time(&tm_p);
     if (ret < 0)
     {
-        printf("test rtc failed:set_system_time failed.\n");
+        //printf("test rtc failed:set_system_time failed.\n");
         ret = -1;
     }
     else
     {
-        printf("rtc test: rtc_set_system_time success.\n");
+        //printf("rtc test: rtc_set_system_time success.\n");
         ret = 0;
     }
     printf("==========rtc_set_system_time_test finish===========\n\n");
@@ -154,7 +154,7 @@ int rtc_get_system_time_test(time_t *local_time)
     int fd,ret;
     struct tm tm_p;
 
-    printf("==========rtc_get_system_time_test start===========\n");
+    //printf("==========rtc_get_system_time_test start===========\n");
     //fd = rtc_xopen(O_RDONLY|O_NOCTTY|O_NDELAY);
     fd = open(MINOR_RTC_PATH, O_RDONLY);
     if (fd < 0)
@@ -174,16 +174,16 @@ int rtc_get_system_time_test(time_t *local_time)
     }
 	else
     {
-        printf("rtc test: rtc_get_system_time success.\n");
+        //printf("rtc test: rtc_get_system_time success.\n");
         *local_time = mktime(&tm_p);  //使用mktime函数得到time_t格式的输出
 
-        printf("test time is: %04d-%02d-%02d %02d:%02d:%02d\n", 1900+tm_p.tm_year,
-               1 + tm_p.tm_mon, tm_p.tm_mday, tm_p.tm_hour, tm_p.tm_min, tm_p.tm_sec);
+        //printf("test time is: %04d-%02d-%02d %02d:%02d:%02d\n", 1900+tm_p.tm_year,
+        //       1 + tm_p.tm_mon, tm_p.tm_mday, tm_p.tm_hour, tm_p.tm_min, tm_p.tm_sec);
     }
 
-    printf("System time is :%s\n",asctime(&tm_p));
+    //printf("System time is :%s\n",asctime(&tm_p));
     close(fd);
-    printf("==========rtc_get_system_time_test finish.===========\n");
+    //printf("==========rtc_get_system_time_test finish.===========\n");
     return 0;
 }
 
@@ -195,7 +195,7 @@ void *rtc_test(void *argv)
     char cmd[128];
     int count = 0;
 
-    printf("=================rtc test start=================\n\n");
+    //printf("=================rtc test start=================\n\n");
     //sprintf(cmd,"aplay %s/rtc_test_start.wav",AUDIO_PATH);
     //system(cmd);
     //system("aplay /data/test/rtc_test_start.wav");
@@ -209,16 +209,16 @@ void *rtc_test(void *argv)
     ret = rtc_get_system_time_test(&lt_get2);
     if(ret<0)
         goto fail;
-    printf("lt_get2-lt_get1 = %d\n",lt_get2-lt_get1);
-    printf("lt_set is \t: %s\n",ctime(&lt_set));
-    printf("lt_get2 is \t: %s\n",ctime(&lt_get2));
+    //printf("lt_get2-lt_get1 = %d\n",lt_get2-lt_get1);
+    //printf("lt_set is \t: %s\n",ctime(&lt_set));
+    //printf("lt_get2 is \t: %s\n",ctime(&lt_get2));
 
     //休眠若干s，则RTC走了若干秒钟，如果不是，则测试失败
     if(RTC_TIME_DIFF>(lt_get2%60-lt_get1%60)){
         ret = -1;
         goto fail;
     }
-    printf("=================rtc test success=================\n");
+    //printf("=================rtc test success=================\n");
 
     return (void*)ret;
     fail:
