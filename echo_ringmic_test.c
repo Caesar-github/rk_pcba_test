@@ -323,6 +323,7 @@ int ringmic_test(char *result, int flag)
 //TODO:
 ......
 #endif
+
 	/* Add channel numbers to the original recording file */
 	pre_len = add_channel(rf_buff, &pre_buff, rf_len);
 	if (pre_len < 0) {
@@ -332,16 +333,17 @@ int ringmic_test(char *result, int flag)
 	free(rf_buff);
 
 #ifdef PCBA_3308
-        if (flag)
-                fp = fopen("/tmp/addchan-vib.pcm", "wb");
-        else
-                fp = fopen("/tmp/addchan-rec.pcm", "wb");
-        if (fp) {
-                fwrite(pre_buff, 1, pre_len, fp);
-                fclose(fp);
-        }
-
+    FILE *fp;
+    if (flag)
+        fp = fopen("/tmp/addchan-vib.pcm", "wb");
+    else
+        fp = fopen("/tmp/addchan-rec.pcm", "wb");
+    if (fp) {
+        fwrite(pre_buff, 1, pre_len, fp);
+        fclose(fp);
+    }
 #endif
+
 	buffer = bytesToInt(pre_buff, &pre_len);
 	if (!buffer) {
 		log_err("bytesToInt() failed!\n");
@@ -351,14 +353,14 @@ int ringmic_test(char *result, int flag)
 	free(pre_buff);
 
 #ifdef PCBA_3308
-	if (flag)
-                fp = fopen("/tmp/bytesToInt-vib.pcm", "wb");
-        else
-                fp = fopen("/tmp/bytesToInt-rec.pcm", "wb");
-        if (fp) {
-                fwrite((int *)buffer+16000, 4, pre_len - 32000, fp);
-                fclose(fp);
-        }
+    if (flag)
+        fp = fopen("/tmp/bytesToInt-vib.pcm", "wb");
+    else
+        fp = fopen("/tmp/bytesToInt-rec.pcm", "wb");
+    if (fp) {
+        fwrite((int *)buffer+16000, 4, pre_len - 32000, fp);
+        fclose(fp);
+    }
 
 #endif
 	/* Call library interface */

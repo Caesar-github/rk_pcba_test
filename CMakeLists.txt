@@ -9,7 +9,7 @@ add_definitions("-DPCBA_PX3SE")
 endif()
 
 if (DEFINED  PCBA_3308)
-add_definitions("-DPCBA_PX3SE")
+add_definitions("-DPCBA_3308")
 endif()
 
 if (DEFINED  PCBA_3229GVA)

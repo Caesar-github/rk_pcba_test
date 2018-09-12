@@ -51,15 +51,15 @@
 #ifdef PCBA_PX3SE
 #define SN_NODE     "/sys/devices/2005a000.i2c/i2c-2/2-0054/snread"
 #else
-#define SN_NODE
+#define SN_NODE     ""
 #endif
 
 #ifdef PCBA_PX3SE
-#warning  "---------------------define PCBA_PX3SE----------------------"
+#warning  "---------------------define PCBA_PX3SE-----------------------"
 #elif (defined PCBA_3308)
-#warning  "---------------------define PCBA_3308----------------------"
+#warning  "---------------------define PCBA_3308------------------------"
 #elif (defined PCBA_3229GVA)
-#warning  "---------------------define PCBA_3229GVA----------------------"
+#warning  "---------------------define PCBA_3229GVA---------------------"
 #else
 #error "====================not define any pcba macro========================="
 #endif
@@ -771,8 +771,8 @@ static int tcp_command_parse(char *recv_buf, PCBA_SINGLE_PARA *recv_paras)
 				}
 				if (strlen(sub_JSON->valuestring) > sizeof(recv_paras[num].valuestr)) {
 					log_err("recv string length is %d exceed %d \n",
-                            strlen(sub_JSON->valuestring),
-                            sizeof(recv_paras[num].valuestr));
+							strlen(sub_JSON->valuestring),
+							sizeof(recv_paras[num].valuestr));
 					ret = CMD_OVERLONG;
 					goto ERR_EXIT;
 				}
@@ -791,6 +791,7 @@ static int tcp_command_parse(char *recv_buf, PCBA_SINGLE_PARA *recv_paras)
 			}
 		}
 	}
+
 ERR_EXIT:
 	cJSON_Delete(recvJSON);
 
