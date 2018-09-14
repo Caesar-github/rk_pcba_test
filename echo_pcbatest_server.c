@@ -340,7 +340,6 @@ static int enter_pcba_test_mode(char *msg, char *test_flag)
 
 #ifdef PCBA_PX3SE
     if (!ret) {
-        printf("---000:%s---\n", msg);
         start += len;
         *start++ = ';';
         len = strlen(local_sn);
@@ -350,7 +349,6 @@ static int enter_pcba_test_mode(char *msg, char *test_flag)
             len = 32;
         }
         strcat(start, local_sn);
-        printf("---111:%s---\n", msg);
     }
 #endif
 
@@ -384,7 +382,7 @@ static int exit_pcba_test_mode(PCBA_SINGLE_PARA *recv_paras, char *test_flag)
         log_info("##########################################################\n");
     }
 
-#if 0
+#if PCBA_3229GVA
     /* If the EXIT type command has a "1" message, indicating
      * that the test is complete, the system will be switched.
      * If it carries a "0" message, it indicates that the current
@@ -409,13 +407,6 @@ static int pcba_test_item_process(PCBA_SINGLE_PARA *recv_paras)
 	int fd;
 	char buf[COMMAND_VALUESIZE] = {0};
 	char pcba_test_filename[COMMAND_VALUESIZE] = {0};
-
-	/*snprintf(pcba_test_filename, sizeof(pcba_test_filename),
-		"%s/%s\0", PCBA_TEST_PATH,
-		recv_paras[INDEX_TEST_ITEM].valuestr);
-		*/
-    /*snprintf(pcba_test_filename, sizeof(pcba_test_filename),
-		"%s\0",recv_paras[INDEX_TEST_ITEM].valuestr);*/
 
     strcpy(pcba_test_filename,recv_paras[INDEX_TEST_ITEM].valuestr);
 
@@ -448,7 +439,6 @@ static int start_pcba_test_proccess(PCBA_SINGLE_PARA *recv_paras, int *err_code)
 		log_err("fork send_command error\n");
 		return FORK_FAIL;
 	} else if (0 == pid) {
-	    log_info(" ********I am child :%d\t**********\n",getpid());
 		if (ret = pcba_test_item_process(recv_paras))
 			log_err("test item process fail, ret=%d\n", ret);
 		*err_code = ret;
@@ -889,20 +879,14 @@ static void tcp_client_process(int stock_fd)
 	int proc_ret = 0;
 	char recv_buf[RECV_BUFFER_SIZE] = {0};
 
-	//cmd_paras = (PCBA_COMMAND_PARA *)malloc(sizeof(PCBA_COMMAND_PARA));
-//	if (!cmd_paras) {
-//		log_err("malloc cmd_paras faild\n");
-//		goto ERR_EXIT;
-//	}
-
 	while(1) {
 		log_info("waiting for client...\n");
 		recv_num = recv(stock_fd, recv_buf, sizeof(recv_buf), 0);
 		log_info("recv_buf is :%s \n",recv_buf);
 		if (recv_num <= 0) {
 			log_err("recv error:%s.  goto exit\n", strerror(errno));
-			//goto ERR_EXIT;
-            goto EXIT;  //chad.ma modified, recv_num < 0 means host disconnect socket
+			goto ERR_EXIT;
+            //goto EXIT;  //chad.ma modified, recv_num < 0 means host disconnect socket
                           //here we exit normal.
 		}
 		recv_buf[recv_num]='\0';
@@ -1015,8 +999,6 @@ int main(int argc, char **argv)
 		} else if (0 == pid) {
 			close(server_sockfd);
 			tcp_client_process(client_sockfd);
-
-			//_exit(0);  //new added to exit child process
 		} else if (pid > 0) {
 			close(client_sockfd);
 		}
