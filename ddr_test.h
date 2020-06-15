@@ -14,6 +14,40 @@
 #define DDR_CAPACITY 256
 #endif
 
+#ifdef PCBA_1808
+#define DDR_CAPACITY 928
+#endif
+
+#ifdef PCBA_3326
+//TODO: According to real DDR Capacity to setting
+#define   DDR_CAPACITY 4096
+#endif
+
+#ifdef PCBA_PX30
+//TODO: According to real DDR Capacity to setting
+#define   DDR_CAPACITY 4096
+#endif
+
+#ifdef PCBA_3288
+//TODO: According to real DDR Capacity to setting
+#define   DDR_CAPACITY 4096
+#endif
+
+#ifdef PCBA_3328
+//TODO: According to real DDR Capacity to setting
+#define   DDR_CAPACITY 4096
+#endif
+
+#ifdef PCBA_3399
+//TODO: According to real DDR Capacity to setting
+#define   DDR_CAPACITY 4096
+#endif
+
+#ifdef PCBA_3300PRO
+//TODO: According to real DDR Capacity to setting
+#define   DDR_CAPACITY 4096
+#endif
+
 void *ddr_test(void *argv);
 
 #endif

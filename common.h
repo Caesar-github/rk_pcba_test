@@ -39,7 +39,37 @@
 #define   PCBA_TEST_PLATFORM            "GVA"
 #endif
 
-#define   PCBA_VERSION                  "0.0.1"
+#ifdef PCBA_1808
+#define   PCBA_TEST_PLATFORM            "1808"
+#endif
+
+#ifdef PCBA_3326
+#define   PCBA_TEST_PLATFORM            "3326"
+#endif
+
+#ifdef PCBA_PX30
+#define   PCBA_TEST_PLATFORM            "PX30"
+#endif
+
+#ifdef PCBA_3288
+#define   PCBA_TEST_PLATFORM            "3288"
+#endif
+
+#ifdef PCBA_3328
+#define   PCBA_TEST_PLATFORM            "3328"
+#endif
+
+#ifdef PCBA_3399
+#define   PCBA_TEST_PLATFORM            "3399"
+#endif
+
+#ifdef PCBA_3399PRO
+#define   PCBA_TEST_PLATFORM            "3399PRO"
+#endif
+
+
+#define   PCBA_VERSION                  "1.0.0"
+
 typedef enum {
 	/* format parse*/
 	CMD_CHK_OK              =  0,
@@ -142,15 +172,14 @@ typedef enum _HDMI_EVENT_ID {
 #define SDCARD_PATH             "/mnt/sdcard"
 #define TEST_RESULT_SAVE_PATH   "/tmp"
 
-//#define TEST_RESULT_SAVE_PATH "/data/cfg/rk_pcba_test"  //echo使用这个路径
+//#define TEST_RESULT_SAVE_PATH "/data/cfg/rk_pcba_test"
 
 
-//#define PCBA_TEST_PATH "/tmp"    //IPC使用这个
-//#define PCBA_TEST_PATH "/data/cfg/rk_pcba_test"  //echo使用这个路径
+//#define PCBA_TEST_PATH "/tmp"
+//#define PCBA_TEST_PATH "/data/cfg/rk_pcba_test"
 
-#define PCBA_TEST_PATH          "/data/"  //echo使用这个路径
-#define MANUAL_TEST_TIMEOUT     60000000   //人工测试项60s超时
-
+#define PCBA_TEST_PATH          "/data/"
+#define MANUAL_TEST_TIMEOUT     60000000
 #define RESULT_TESTING          "TESTING"
 #define RESULT_PASS             "PASS"
 #define RESULT_FAIL             "FAIL"
