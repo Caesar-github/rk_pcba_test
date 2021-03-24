@@ -34,6 +34,8 @@
 
 #ifdef PCBA_PX3SE
 #define EMMCPATH "/sys/bus/mmc/devices/mmc0:1234/block/mmcblk0/size"
+#elif defined PCBA_356X
+#define EMMCPATH "/sys/bus/mmc/devices/mmc2:0001/block/mmcblk2/size"
 #else
 #define EMMCPATH "/sys/bus/mmc/devices/mmc0:0001/block/mmcblk0/size"
 #endif
@@ -230,7 +232,70 @@ void *emmc_test(void *argv)
 {
     return 0;
 }
+#endif
 
+#ifdef PCBA_1126_1109
+// TODO: add rv1126/1109 emmc test code here.
+void *emmc_test(void *argv)
+{
+    return 0;
+}
+#endif
+
+#ifdef PCBA_356X
+// TODO: add 356X emmc test code here.
+void *emmc_test(void *argv)
+{
+	int emmc_ret = 0;
+	char emmcsize_char[20];
+	int emmc_size = 0;
+
+	int ddr_ret = 0;
+	char ddrsize_char[20];
+	int ddr_size = 0;
+	char cmd[128];
+
+    printf("=======  emmc test starting   ========\n");
+    //sprintf(cmd,"aplay %s/emmc_test_start.wav",AUDIO_PATH);
+    //system(cmd);
+    //system("aplay /data/test/emmc_test_start.wav");
+	/* For emmc */
+	memset(emmcsize_char, 0, sizeof(emmcsize_char));
+	emmc_ret = readFromFile(EMMCPATH, emmcsize_char, sizeof(emmcsize_char));
+
+	printf("readFromFile effective bytes is %d \n",emmc_ret);
+	if (emmc_ret >= 0) {  /*read back normal*/
+		emmc_size = get_emmc_size(emmcsize_char);
+		if(emmc_size < 0){
+            emmc_ret = -1;
+            goto fail;
+        }
+		printf("=======  emmc_size is: %d GB ========\n",emmc_size);
+		if (EMMC_CAPACITY != emmc_size)
+        {
+            goto fail;
+        }
+	}
+	else
+	{
+	    goto fail;
+	}
+	printf("=======  emmc_test success  ========\n");
+
+	return (void*)emmc_ret;
+fail:
+    printf("=======  emmc_test failed  ========\n");
+
+    return (void*)emmc_ret;
+}
+#endif
+
+#ifdef PCBA_3588
+// TODO: add 3588 emmc test code here.
+void *emmc_test(void *argv)
+{
+    return 0;
+}
 #endif
 
 int main(int argc, char *argv[])

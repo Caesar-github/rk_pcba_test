@@ -55,6 +55,10 @@
 #define   PCBA_TEST_PLATFORM            "3288"
 #endif
 
+#ifdef PCBA_312X
+#define   PCBA_TEST_PLATFORM            "312X"
+#endif
+
 #ifdef PCBA_3328
 #define   PCBA_TEST_PLATFORM            "3328"
 #endif
@@ -67,8 +71,20 @@
 #define   PCBA_TEST_PLATFORM            "3399PRO"
 #endif
 
+#ifdef PCBA_1126_1109
+#define   PCBA_TEST_PLATFORM            "1126_1109"
+#endif
 
-#define   PCBA_VERSION                  "1.0.0"
+#ifdef PCBA_356X
+#define   PCBA_TEST_PLATFORM            "356X"
+#endif
+
+#ifdef PCBA_3588
+#define   PCBA_TEST_PLATFORM            "3588"
+#endif
+
+
+#define   PCBA_VERSION                  "1.1.0"
 
 typedef enum {
 	/* format parse*/

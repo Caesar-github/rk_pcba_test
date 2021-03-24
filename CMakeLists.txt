@@ -44,6 +44,19 @@ if (DEFINED  PCBA_3399PRO)
 add_definitions("-DPCBA_3399PRO")
 endif()
 
+if (DEFINED  PCBA_1126_1109)
+add_definitions("-DPCBA_1126_1109")
+endif()
+
+if (DEFINED  PCBA_356X)
+add_definitions("-DPCBA_356X")
+endif()
+
+if (DEFINED  PCBA_3588)
+add_definitions("-DPCBA_3588")
+endif()
+
+
 set(INSTALL_TARGET_DIR /data)
 
 set(SRC_LIST
@@ -124,6 +137,12 @@ MESSAGE(${CMAKE_CURRENT_SOURCE_DIR} "  ====== SOURCE_DIR PCBA_1808 ========  ")
 set(SRC_LIST echo_npu_usb_screen_test.c)
 add_executable( echo_npu_usb_screen_test ${SRC_LIST} )
 install(TARGETS echo_npu_usb_screen_test DESTINATION ${INSTALL_TARGET_DIR})
+endif()
+
+if (DEFINED PCBA_356X)
+MESSAGE(${CMAKE_CURRENT_SOURCE_DIR} "  ===========SOURCE DIR PCBA_356X ===========")
+else()
+message(${CMAKE_CURRENT_SOURCE_DIR} " #Error: not find define PCBA_356X")
 endif()
 
 # pcba with ui

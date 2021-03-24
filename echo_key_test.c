@@ -144,6 +144,26 @@ KEY_st gkey_test[KEY_VALID_NUM] = {
 #define KEY_VALID_NUM       0
 #endif
 
+#ifdef PCBA_1126_1109
+//TODO:According to RV1126 / RV1109 real board to add test code.
+#define KEY_VALID_NUM       0
+#endif
+
+#ifdef PCBA_356X
+//TODO:According to 356X board to add test code.
+#define KEY_VALID_NUM       2
+
+KEY_st gkey_test[KEY_VALID_NUM] = {
+    {"VOL+",    KEY_VOLUMEUP,    0},
+    {"VOL-",    KEY_VOLUMEDOWN,    0},
+};
+#endif
+
+#ifdef PCBA_3588
+//TODO:According to 3588 real board to add test code.
+#define KEY_VALID_NUM       0
+#endif
+
 static char result[COMMAND_VALUESIZE] = RESULT_FAIL;
 
 static int isAllKeyPressed(KEY_st *key_array)

@@ -74,8 +74,14 @@
 #warning  "---------------------define PCBA_3399------------------------"
 #elif (defined PCBA_3399PRO)
 #warning  "---------------------define PCBA_3399PRO---------------------"
+#elif (defined PCBA_1126_1109)
+#warning  "---------------------define PCBA_1126_1109------------------------"
+#elif (defined PCBA_356X)
+#warning  "---------------------define PCBA_356X---------------------"
+#elif (defined PCBA_3588)
+#warning  "---------------------define PCBA_3588---------------------"
 #else
-#error "====================not define any pcba macro======================"
+#error "====================not define any platform pcba macro here,pls check it======================"
 #endif
 
 static void sig_child_handle(int sig)
@@ -988,7 +994,16 @@ int main(int argc, char **argv)
 
     server_sockfd = init_tcp();
     if (server_sockfd < 0)
+    {
         log_err("tcp server init fail\n");
+        return -1;
+    }
+
+    log_info("*****************************************\n");
+    log_info("***         pcba test start           ***\n");
+    log_info("***         Rockchip.Co.Ld.           ***\n");
+    log_info("*****************************************\n");
+    log_info("pcba test version: v%s\n", PCBA_VERSION);
 
     while(1) {
     //{
